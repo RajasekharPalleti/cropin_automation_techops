@@ -1,0 +1,53 @@
+# Cropin Automation TechOps
+
+This project is an automation utility designed for Cropin TechOps to streamline various API-based tasks using a user-friendly web interface.
+
+## Features
+
+-   **Script Execution**: Run Python automation scripts (`AddTags`, `UpdateFarmerName`, etc.) directly from the browser.
+-   **Excel Integration**: Upload Excel files as input and download processed results with status columns.
+-   **Live Console**: View real-time logs and execution feedback directly in the web UI.
+-   **Dynamic Configuration**: Authentication and API URLs are configurable via the UI.
+-   **Searchable Dropdown**: Easily find and select automation scripts.
+-   **Template Management**: Download sample Excel templates for each script.
+
+## Setup & Installation
+
+Follow these steps to set up the project on a new machine.
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/RajasekharPalleti/cropin_automation_techops.git
+cd cropin_automation_techops
+```
+
+### 2. Install Dependencies
+Ensure you have Python installed, then run:
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run the Application
+Start the FastAPI server:
+```bash
+uvicorn app.main:app --reload
+```
+The application will be accessible at: `http://127.0.0.1:8000`
+
+## Usage
+
+1.  **Select Script**: Choose the automation script you want to run from the dropdown.
+2.  **Download Template**: If needed, click "Get Template" to see the expected Excel format.
+3.  **Configure**: Enter the API URL (if different from default) and Authentication details.
+4.  **Upload Input**: Drag and drop your filled Excel file.
+5.  **Run**: The script will execute, showing live logs in the console.
+6.  **Download Result**: Once finished, the output file will verify automatically.
+
+## Project Structure
+
+-   `app/`: Core application logic and scripts.
+    -   `main.py`: FastAPI server and API endpoints.
+    -   `scripts/`: Folder for automation scripts.
+-   `static/`: Frontend assets (HTML, CSS, JS).
+-   `sample_templates/`: Excel templates for users.
+-   `uploads/` & `outputs/`: Temporary directories for processing files.
