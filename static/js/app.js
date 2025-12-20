@@ -106,6 +106,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 extendedConfigDiv.style.display = 'none';
             }
 
+            // Toggle PR Config (shared for PR enablement scripts)
+            const prConfig = document.getElementById('pr-weather-config');
+            if (prConfig) {
+                if (selectedScript.name === 'PR_Enablement.py' || selectedScript.name === 'PR_and_Weather_Enablement.py') {
+                    prConfig.style.display = 'block';
+                } else {
+                    prConfig.style.display = 'none';
+                }
+            }
+
             if (selectedScript.requires_input === false) {
                 // Direct Run Mode
                 stepOne.style.display = 'none';
@@ -342,12 +352,15 @@ document.addEventListener('DOMContentLoaded', () => {
             consoleContent.appendChild(startLine);
 
             const postApiUrl = document.getElementById('put-api-url').value;
+            const useFarmerId = document.getElementById('use-farmer-id').value;
+
             const config = {
                 username: document.getElementById('username').value,
                 password: document.getElementById('password').value,
                 environment: document.getElementById('environment').value,
                 tenant_code: document.getElementById('tenant-code').value,
-                post_api_url: postApiUrl
+                post_api_url: postApiUrl,
+                use_farmer_id: useFarmerId
             };
 
             const formData = new FormData();

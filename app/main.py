@@ -94,6 +94,16 @@ async def list_scripts():
             "url": "https://cloud.cropin.in/services/farm/api/farmers",
             "label": "Base Api Url",
             "requires_input": True
+        },
+        "PR_Enablement.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/croppable-areas",
+            "label": "Base Api Url",
+            "requires_input": True
+        },
+        "PR_and_Weather_Enablement.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/croppable-areas",
+            "label": "Base Api Url",
+            "requires_input": True
         }
     }
     
