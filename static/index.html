@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automation Meta Console</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Using Google Fonts to match the look -->
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="input-group">
+                <label for="tenant-code">Tenant Name</label>
+                <input type="text" id="tenant-code" placeholder="Enter Tenant Name" value="asp">
+            </div>
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter Username" value="9649964096">
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="******" value="123456">
+                    <span class="eye-icon">👁️</span>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="environment">Environment</label>
+                <!-- Hidden native select -->
+                <select id="environment" style="display: none;">
+                    <option value="prod1" selected>prod1</option>
+                    <option value="prod2">prod2</option>
+                </select>
+
+                <!-- Custom Environment Dropdown -->
+                <div class="custom-dropdown" id="env-dropdown">
+                    <div class="dropdown-selected" id="env-selected">
+                        <span id="env-selected-text">prod1</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="dropdown-menu" id="env-menu">
+                        <ul class="dropdown-list" id="env-list">
+                            <li data-value="prod1">prod1</li>
+                            <li data-value="prod2">prod2</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <button class="config-btn" id="config-toggle">
+                    ⚙️ CONFIGURATION
+                </button>
+                <div class="config-content" id="config-content">
+                    <div class="input-group">
+                        <label for="put-api-url">Put/Post Api Url</label>
+                        <input type="text" id="put-api-url"
+                            placeholder="https://cloud.cropin.in/services/master/api/tags"
+                            value="https://cloud.cropin.in/services/master/api/tags">
+                    </div>
+
+                    <div id="extended-config" style="display: none;">
+                        <div class="input-group">
+                            <label for="dataset">Dataset</label>
+                            <input type="text" id="dataset" placeholder="vw_rpt_application_blocks_v">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="load-type">Load Type</label>
+                            <input type="text" id="load-type" placeholder="incremental">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="x-api-key">X-API-KEY</label>
+                            <input type="text" id="x-api-key" placeholder="Enter API Key">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <div class="header-left">
+                    <!-- Rocket Logo Placeholder -->
+                    <h1>🚀 Automation Meta Console</h1>
+                </div>
+                <div class="header-right">
+                    <span>Deploy</span>
+                    <span class="menu-dots">⋮</span>
+                </div>
+            </div>
+
+            <div class="script-selection">
+                <label>Select Script</label>
+                <!-- Hidden native socket for logic compatibility -->
+                <select id="script-select" style="display: none;">
+                    <option value="" disabled selected>Select a script...</option>
+                </select>
+
+                <!-- Custom Searchable Dropdown -->
+                <div class="custom-dropdown" id="custom-dropdown">
+                    <div class="dropdown-selected" id="dropdown-selected">
+                        <span id="selected-text">Select Script</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="dropdown-menu" id="dropdown-menu">
+                        <div class="dropdown-search">
+                            <input type="text" id="dropdown-search-input" placeholder="Search scripts...">
+                        </div>
+                        <ul class="dropdown-list" id="dropdown-list">
+                            <!-- Items populated by JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-area">
+                <div class="step-one">
+                    <h2>1. Get Template</h2>
+                    <button class="btn-primary" id="generate-template-btn">📄 Generate Template</button>
+                    <div class="info-box" id="template-info-box">
+                        <!-- Instructions or status can go here -->
+                        Click to download template.
+                    </div>
+                </div>
+
+                <div class="step-two">
+                    <h2>2. Upload & Run</h2>
+                    <label>Upload filled Excel</label>
+                    <div class="drop-zone" id="drop-zone">
+                        <div class="cloud-icon">☁️</div>
+                        <div class="drop-text">
+                            <strong>Drag and drop file here</strong>
+                            <p>Limit 200MB per file • XLSX</p>
+                        </div>
+                        <label for="file-upload" class="browse-btn">Browse files</label>
+                        <input type="file" id="file-upload" accept=".xlsx" hidden>
+                    </div>
+
+                    <!-- Run Action (Hidden until upload) -->
+                    <div id="run-container" style="display: none; margin-top: 20px;">
+                        <button class="btn-primary" id="run-script-btn" style="background-color: #28a745; width: 100%;">
+                            ▶ Run Script
+                        </button>
+                    </div>
+
+                    <!-- Console Output -->
+                    <div class="console-box" id="console-box" style="display: none;">
+                        <div class="console-header">Console Output</div>
+                        <div class="console-content" id="console-content"></div>
+                    </div>
+
+                    <!-- Hidden Status Area for download links -->
+                    <div id="status-area"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>
