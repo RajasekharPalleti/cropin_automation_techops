@@ -116,6 +116,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            // Toggle Asset Attribute Config
+            const assetConfig = document.getElementById('asset-attr-config');
+            if (assetConfig) {
+                if (selectedScript.name === 'Update_Asset_add_Attribute.py' || selectedScript.name === 'Update_Farmer_Addtl_Atrribute.py') {
+                    assetConfig.style.display = 'block';
+                } else {
+                    assetConfig.style.display = 'none';
+                }
+            }
+
+            // Logic for Attribute Count Dropdown
+            const attrCountSelect = document.getElementById('attr-count-select');
+            if (attrCountSelect) {
+                attrCountSelect.addEventListener('change', function () {
+                    const count = parseInt(this.value);
+                    document.getElementById('group-key-1').style.display = 'block'; // Always show 1
+                    document.getElementById('group-key-2').style.display = count >= 2 ? 'block' : 'none';
+                    document.getElementById('group-key-3').style.display = count >= 3 ? 'block' : 'none';
+                    document.getElementById('group-key-4').style.display = count >= 4 ? 'block' : 'none';
+                });
+            }
+
             if (selectedScript.requires_input === false) {
                 // Direct Run Mode
                 stepOne.style.display = 'none';
@@ -354,13 +376,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const postApiUrl = document.getElementById('put-api-url').value;
             const useFarmerId = document.getElementById('use-farmer-id').value;
 
+            // Asset Attribute Configs
+            const attrCount = parseInt(document.getElementById('attr-count-select').value) || 1;
+            let attrKeys = [];
+            attrKeys.push(document.getElementById('attr-key-1').value);
+            if (attrCount >= 2) attrKeys.push(document.getElementById('attr-key-2').value);
+            if (attrCount >= 3) attrKeys.push(document.getElementById('attr-key-3').value);
+            if (attrCount >= 4) attrKeys.push(document.getElementById('attr-key-4').value);
+
             const config = {
                 username: document.getElementById('username').value,
                 password: document.getElementById('password').value,
                 environment: document.getElementById('environment').value,
                 tenant_code: document.getElementById('tenant-code').value,
                 post_api_url: postApiUrl,
-                use_farmer_id: useFarmerId
+                use_farmer_id: useFarmerId,
+                attr_keys: attrKeys
             };
 
             const formData = new FormData();

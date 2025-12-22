@@ -7,17 +7,24 @@
     <title>Automation Meta Console</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- Using Google Fonts to match the look -->
+    <link rel="icon" href="/static/images/logo.png" type="image/png">
 </head>
 
 <body>
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
+            <!-- Sidebar content remains -->
             <div class="input-group">
                 <label for="tenant-code">Tenant Name</label>
                 <input type="text" id="tenant-code" placeholder="Enter Tenant Name" value="asp">
             </div>
+            <!-- ... -->
+
+            <!-- (Skipping irrelevant sidebar lines for brevity in replacement if allowed, but strict checking needed) -->
+            <!-- Check context carefully. I need to only target lines I am changing. -->
+
+            <!-- Use MultiReplace or small chunks for safety -->
             <div class="input-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" placeholder="Enter Username" value="9649964096">
@@ -93,6 +100,40 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Specific Config for Update_Asset_add_Attribute -->
+                    <div id="asset-attr-config"
+                        style="display: none; margin-top: 15px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
+                        <div class="input-group">
+                            <label for="attr-count-select">Number of Attributes to Update</label>
+                            <select id="attr-count-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+
+                        <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Enter JSON keys for attributes to
+                            update:</p>
+
+                        <div class="input-group" id="group-key-1">
+                            <label for="attr-key-1">Attribute Key 1 (Header: additional_attribute_1)</label>
+                            <input type="text" id="attr-key-1" placeholder="e.g. stateRegistrationinscrioEstadual">
+                        </div>
+                        <div class="input-group" id="group-key-2" style="display:none;">
+                            <label for="attr-key-2">Attribute Key 2 (Header: additional_attribute_2)</label>
+                            <input type="text" id="attr-key-2" placeholder="e.g. key2">
+                        </div>
+                        <div class="input-group" id="group-key-3" style="display:none;">
+                            <label for="attr-key-3">Attribute Key 3 (Header: additional_attribute_3)</label>
+                            <input type="text" id="attr-key-3" placeholder="e.g. key3">
+                        </div>
+                        <div class="input-group" id="group-key-4" style="display:none;">
+                            <label for="attr-key-4">Attribute Key 4 (Header: additional_attribute_4)</label>
+                            <input type="text" id="attr-key-4" placeholder="e.g. key4">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -101,13 +142,11 @@
         <div class="main-content">
             <div class="header">
                 <div class="header-left">
-                    <!-- Rocket Logo Placeholder -->
-                    <h1>🚀 Automation Meta Console</h1>
+                    <img src="/static/images/cropin_text.png" alt="Cropin"
+                        style="height: 35px; vertical-align: middle; margin-right: 10px;">
+                    <h1 style="display: inline; vertical-align: middle; color: #009ade;">Automation Meta Console</h1>
                 </div>
-                <div class="header-right">
-                    <span>Deploy</span>
-                    <span class="menu-dots">⋮</span>
-                </div>
+
             </div>
 
             <div class="script-selection">

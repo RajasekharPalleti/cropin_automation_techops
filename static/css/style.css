@@ -134,6 +134,12 @@ body {
     flex-direction: column;
     gap: 10px;
     margin-top: 10px;
+    max-height: 400px;
+    /* Limit height */
+    overflow-y: auto;
+    /* Enable scroll */
+    padding-right: 5px;
+    /* Space for scrollbar */
 }
 
 .config-content.open {
