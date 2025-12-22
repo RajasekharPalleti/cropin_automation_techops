@@ -14,17 +14,21 @@
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
+            <div class="sidebar-header">
+                <!-- SVG Lock Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lock-icon">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <h2>Authentication</h2>
+            </div>
             <!-- Sidebar content remains -->
             <div class="input-group">
                 <label for="tenant-code">Tenant Name</label>
                 <input type="text" id="tenant-code" placeholder="Enter Tenant Name" value="asp">
             </div>
-            <!-- ... -->
-
-            <!-- (Skipping irrelevant sidebar lines for brevity in replacement if allowed, but strict checking needed) -->
-            <!-- Check context carefully. I need to only target lines I am changing. -->
-
-            <!-- Use MultiReplace or small chunks for safety -->
             <div class="input-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" placeholder="Enter Username" value="9649964096">
@@ -133,6 +137,65 @@
                         <div class="input-group" id="group-key-4" style="display:none;">
                             <label for="attr-key-4">Attribute Key 4 (Header: additional_attribute_4)</label>
                             <input type="text" id="attr-key-4" placeholder="e.g. key4">
+                        </div>
+                    </div>
+
+                    <div id="address-config"
+                        style="display: none; margin-top: 15px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
+
+                        <div class="input-group">
+                            <label for="addr-count-select">Number of Address Keys to Update</label>
+                            <select id="addr-count-select"
+                                style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #fafafa; width: 100%;">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+
+                        <p
+                            style="font-size: 13px; color: #666; margin-top: 10px; margin-bottom: 10px; line-height: 1.4; word-wrap: break-word;">
+                            Enter Address JSON Keys (e.g. <b>sublocalityLevel2</b>) which map to Excel columns
+                            <b>address_value_1</b>, etc.
+                        </p>
+
+                        <div class="input-group" id="group-addr-1">
+                            <label for="address-key-1">Address Key 1 (Header: address_value_1)</label>
+                            <input type="text" id="address-key-1" placeholder="e.g. sublocalityLevel2">
+                        </div>
+                        <div class="input-group" id="group-addr-2" style="display:none;">
+                            <label for="address-key-2">Address Key 2 (Header: address_value_2)</label>
+                            <input type="text" id="address-key-2" placeholder="e.g. village">
+                        </div>
+                        <div class="input-group" id="group-addr-3" style="display:none;">
+                            <label for="address-key-3">Address Key 3 (Header: address_value_3)</label>
+                            <input type="text" id="address-key-3" placeholder="e.g. pincode">
+                        </div>
+                        <div class="input-group" id="group-addr-4" style="display:none;">
+                            <label for="address-key-4">Address Key 4 (Header: address_value_4)</label>
+                            <input type="text" id="address-key-4" placeholder="e.g. state">
+                        </div>
+                    </div>
+
+                    <!-- Specific Config for Area_Audit_To_CA -->
+                    <div id="area-audit-config"
+                        style="display: none; margin-top: 15px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
+                        <div class="input-group">
+                            <label for="area-unit-select">Area Unit</label>
+                            <input type="text" id="area-unit-select" placeholder="e.g. Hectare, Acre" value="Hectare"
+                                style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #fafafa; width: 100%;">
+                        </div>
+                        <div class="input-group" style="margin-top: 10px;">
+                            <label for="force-crop-audited">Set 'cropAudited' Value?</label>
+                            <select id="force-crop-audited"
+                                style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #fafafa; width: 100%;">
+                                <option value="none">Don't Send (Default)</option>
+                                <option value="true">True</option>
+                                <option value="false">False</option>
+                            </select>
+                            <small style="color: #666; font-size: 11px;">Override the cropAudited flag to True if not
+                                works add False</small>
                         </div>
                     </div>
                 </div>

@@ -129,6 +129,36 @@ async def list_scripts():
             "url": "https://cloud.cropin.in/services/farm/api/croppable-areas",
             "label": "Base Api Url",
             "requires_input": True
+        },
+        "Update_Farmer_Tags.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/farmers",
+            "label": "Base Api Url",
+            "requires_input": True
+        },
+        "Update_Asset_Tags.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/assets",
+            "label": "Base Api Url",
+            "requires_input": True
+        },
+        "Update_Farmer_Address.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/farmers",
+            "label": "Base Api Url",
+            "requires_input": True
+        },
+        "PR_Enablement_Bulk.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/croppable-areas/plot-risk/batch",
+            "label": "Plot Risk URL",
+            "requires_input": True
+        },
+        "Edit_Plans_in_Variety_with_or_without_recurring.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/plans",
+            "label": "Plan API URL",
+            "requires_input": True
+        },
+        "Area_Audit_To_CA.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/croppable-areas",
+            "label": "Croppable Area API URL",
+            "requires_input": True
         }
     }
     

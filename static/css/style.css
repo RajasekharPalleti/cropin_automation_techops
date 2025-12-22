@@ -1,5 +1,5 @@
 :root {
-    --primary-color: #007bff;
+    --primary-color: #76be28;
     /* Blue */
     --bg-color: #f8f9fa;
     --sidebar-bg: #ffffff;
@@ -24,7 +24,7 @@ body {
 
 /* Sidebar */
 .sidebar {
-    width: 300px;
+    width: 400px;
     background-color: var(--sidebar-bg);
     padding: 20px;
     border-right: 1px solid var(--border-color);
@@ -35,6 +35,31 @@ body {
     /* Full height */
     box-sizing: border-box;
     /* Include padding in width */
+    overflow-y: auto;
+    /* Enable scrolling */
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.sidebar-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.lock-icon {
+    width: 22px;
+    height: 22px;
+    color: var(--primary-color);
+    /* Blue match */
 }
 
 .input-group {
@@ -120,10 +145,10 @@ body {
 .config-btn {
     width: 100%;
     padding: 10px;
-    background-color: #e3f2fd;
-    /* Light blue */
-    border: 1px solid #90caf9;
-    color: #1976d2;
+    background-color: #f1f8e9;
+    /* Light green */
+    border: 1px solid #c5e1a5;
+    color: #558b2f;
     font-weight: bold;
     border-radius: 4px;
     cursor: pointer;
@@ -136,12 +161,8 @@ body {
     flex-direction: column;
     gap: 10px;
     margin-top: 10px;
-    max-height: 400px;
-    /* Limit height */
-    overflow-y: auto;
-    /* Enable scroll */
-    padding-right: 5px;
-    /* Space for scrollbar */
+    /* max-height removed to allow natural expansion */
+    /* overflow-y removed */
 }
 
 .config-content.open {
@@ -370,7 +391,7 @@ h2 {
 }
 
 .btn-primary {
-    background-color: #1976d2;
+    background-color: #76be28;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -428,15 +449,17 @@ h2 {
 
 .browse-btn {
     padding: 8px 16px;
-    background-color: white;
-    border: 1px solid #ccc;
+    background-color: #76be28;
+    border: 1px solid #76be28;
     border-radius: 4px;
     font-size: 13px;
     cursor: pointer;
     font-weight: 500;
     white-space: nowrap;
+    color: white;
 }
 
 .browse-btn:hover {
-    background-color: #f1f1f1;
+    background-color: #64a022;
+    border-color: #64a022;
 }

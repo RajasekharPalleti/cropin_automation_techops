@@ -138,6 +138,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            // Toggle Address Config
+            const addrConfig = document.getElementById('address-config');
+            if (addrConfig) {
+                if (selectedScript.name === 'Update_Farmer_Address.py') {
+                    addrConfig.style.display = 'block';
+                } else {
+                    addrConfig.style.display = 'none';
+                }
+            }
+
+            // Toggle Area Audit Config
+            const areaConfig = document.getElementById('area-audit-config');
+            if (areaConfig) {
+                if (selectedScript.name === 'Area_Audit_To_CA.py') {
+                    areaConfig.style.display = 'block';
+                } else {
+                    areaConfig.style.display = 'none';
+                }
+            }
+
             // Logic for Attribute Count Dropdown
             const attrCountSelect = document.getElementById('attr-count-select');
             if (attrCountSelect) {
@@ -147,6 +167,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('group-key-2').style.display = count >= 2 ? 'block' : 'none';
                     document.getElementById('group-key-3').style.display = count >= 3 ? 'block' : 'none';
                     document.getElementById('group-key-4').style.display = count >= 4 ? 'block' : 'none';
+                });
+            }
+
+            // Logic for Address Count Dropdown
+            const addrCountSelect = document.getElementById('addr-count-select');
+            if (addrCountSelect) {
+                addrCountSelect.addEventListener('change', function () {
+                    const count = parseInt(this.value);
+                    document.getElementById('group-addr-1').style.display = 'block'; // Always show 1
+                    document.getElementById('group-addr-2').style.display = count >= 2 ? 'block' : 'none';
+                    document.getElementById('group-addr-3').style.display = count >= 3 ? 'block' : 'none';
+                    document.getElementById('group-addr-4').style.display = count >= 4 ? 'block' : 'none';
                 });
             }
 
@@ -391,10 +423,44 @@ document.addEventListener('DOMContentLoaded', () => {
             // Asset Attribute Configs
             const attrCount = parseInt(document.getElementById('attr-count-select').value) || 1;
             let attrKeys = [];
-            attrKeys.push(document.getElementById('attr-key-1').value);
-            if (attrCount >= 2) attrKeys.push(document.getElementById('attr-key-2').value);
-            if (attrCount >= 3) attrKeys.push(document.getElementById('attr-key-3').value);
-            if (attrCount >= 4) attrKeys.push(document.getElementById('attr-key-4').value);
+
+            // Check script name for Logic
+            const scriptNameForConfig = scriptSelect.value;
+
+            if (scriptNameForConfig === 'Update_Farmer_Address.py') {
+                // Read Address Keys
+                const addrCount = parseInt(document.getElementById('addr-count-select').value) || 1;
+
+                // Clear any previous (e.g. from accidental double push)
+                attrKeys = [];
+
+                const k1 = document.getElementById('address-key-1').value;
+                if (k1) attrKeys.push(k1);
+
+                if (addrCount >= 2) {
+                    const k2 = document.getElementById('address-key-2').value;
+                    if (k2) attrKeys.push(k2);
+                }
+                if (addrCount >= 3) {
+                    const k3 = document.getElementById('address-key-3').value;
+                    if (k3) attrKeys.push(k3);
+                }
+                if (addrCount >= 4) {
+                    const k4 = document.getElementById('address-key-4').value;
+                    if (k4) attrKeys.push(k4);
+                }
+
+            } else {
+                // Default Attribute Keys
+                attrKeys.push(document.getElementById('attr-key-1').value);
+                if (attrCount >= 2) attrKeys.push(document.getElementById('attr-key-2').value);
+                if (attrCount >= 3) attrKeys.push(document.getElementById('attr-key-3').value);
+                if (attrCount >= 4) attrKeys.push(document.getElementById('attr-key-4').value);
+            }
+
+            // Area Audit Unit & Crop Audited Check
+            const areaUnit = document.getElementById('area-unit-select') ? document.getElementById('area-unit-select').value : "Hectare";
+            const forceCropAuditedVal = document.getElementById('force-crop-audited') ? document.getElementById('force-crop-audited').value : "none";
 
             const config = {
                 username: document.getElementById('username').value,
@@ -403,7 +469,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 tenant_code: document.getElementById('tenant-code').value,
                 post_api_url: postApiUrl,
                 use_farmer_id: useFarmerId,
-                attr_keys: attrKeys
+                attr_keys: attrKeys,
+                unit: areaUnit,
+                force_crop_audited: forceCropAuditedVal
             };
 
             const formData = new FormData();
