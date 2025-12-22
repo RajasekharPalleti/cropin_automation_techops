@@ -119,6 +119,16 @@ async def list_scripts():
             "url": "https://cloud.cropin.in/services/farm/api/farmers",
             "label": "Base Api Url",
             "requires_input": True
+        },
+        "Add_Users.py": {
+            "url": "https://cloud.cropin.in/services/user/api/users/images",
+            "label": "User API Url",
+            "requires_input": True
+        },
+        "Area_Audit_Removal.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/croppable-areas",
+            "label": "Base Api Url",
+            "requires_input": True
         }
     }
     

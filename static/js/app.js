@@ -97,11 +97,23 @@ document.addEventListener('DOMContentLoaded', () => {
             // Populate Extended Config
             const extendedConfigDiv = document.getElementById('extended-config');
 
-            if (selectedScript.name === 'GetDiscrollsData.py') {
+            if (selectedScript.name === 'Add_Users.py') {
                 extendedConfigDiv.style.display = 'block';
-                document.getElementById('dataset').value = selectedScript.dataset || '';
-                document.getElementById('load-type').value = selectedScript.load_type || '';
-                document.getElementById('x-api-key').value = selectedScript.x_api_key || '';
+                // Only show API Key field, hide others if possible or just show all
+                // For simplicity, showing all but we only care about x-api-key
+                document.getElementById('dataset').closest('.input-group').style.display = 'none';
+                document.getElementById('load-type').closest('.input-group').style.display = 'none';
+                document.getElementById('x-api-key').closest('.input-group').style.display = 'block';
+
+                // Update label for x-api-key to say Google API Key
+                document.querySelector('label[for="x-api-key"]').textContent = "Google API Key";
+
+            } else if (selectedScript.name === 'GetDiscrollsData.py') {
+                extendedConfigDiv.style.display = 'block';
+                document.getElementById('dataset').closest('.input-group').style.display = 'block';
+                document.getElementById('load-type').closest('.input-group').style.display = 'block';
+                document.getElementById('x-api-key').closest('.input-group').style.display = 'block';
+                document.querySelector('label[for="x-api-key"]').textContent = "X-API-KEY";
             } else {
                 extendedConfigDiv.style.display = 'none';
             }

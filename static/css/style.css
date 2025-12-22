@@ -55,6 +55,8 @@ body {
     border-radius: 4px;
     font-size: 14px;
     background-color: #fafafa;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .console-content {
