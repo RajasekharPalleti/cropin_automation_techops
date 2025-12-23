@@ -1,6 +1,12 @@
 # Author: Rajasekhar Palleti
 # Purpose: Update Area Audit for Croppable Areas
 # Supports geoInfo in BOTH formats:
+"""
+Audits area data and updates Croppable Areas (CA).
+
+Inputs:
+Excel file with CA_id, CA_Name, area_Audit_DTO, Latitude, Longitude, and audited_count.
+"""
 # 1) Full GeoJSON FeatureCollection
 # 2) Raw coordinates list [[lng, lat], ...]
 

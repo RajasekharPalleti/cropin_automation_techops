@@ -1,3 +1,9 @@
+"""
+Adds seed grades to a specific variety.
+
+Inputs:
+Excel file with Variety ID, Seed Grade Name, and Description.
+"""
 import json
 import requests
 import pandas as pd

@@ -11,6 +11,7 @@ from openpyxl import load_workbook
 from openpyxl.worksheet.datavalidation import DataValidation
 import pandas as pd
 import asyncio
+import ast
 
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
@@ -213,6 +214,26 @@ async def list_scripts():
     
     for filename in os.listdir(SCRIPTS_DIR):
         if filename.endswith(".py") and filename != "__init__.py":
+            # Extract docstring for details
+            filepath = os.path.join(SCRIPTS_DIR, filename)
+            description = "No description available."
+            input_description = "Standard Excel Input."
+            
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    file_content = f.read()
+                    tree = ast.parse(file_content)
+                    docstring = ast.get_docstring(tree)
+                    
+                    if docstring:
+                        # Split by "Inputs:" to separate description and input details
+                        parts = docstring.split("Inputs:")
+                        description = parts[0].strip()
+                        if len(parts) > 1:
+                            input_description = parts[1].strip()
+            except Exception as e:
+                print(f"Error parsing docstring for {filename}: {e}")
+
             config = default_configs.get(filename, {
                 "url": "https://cloud.cropin.in/services/master/api", 
                 "label": "Api Url",
@@ -224,7 +245,9 @@ async def list_scripts():
                 "label": config["label"],
                 "url2": config.get("url2"),
                 "label2": config.get("label2"),
-                "requires_input": config.get("requires_input", True)
+                "requires_input": config.get("requires_input", True),
+                "description": description,
+                "input_description": input_description
             })
     
     # Sort scripts alphabetically by name

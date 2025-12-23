@@ -209,6 +209,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 uploadLabel.style.display = 'block';
                 runContainer.style.display = 'none'; // Hide until upload
             }
+
+            // --- Populate Script Details ---
+            const detailsCard = document.getElementById('script-details-card');
+            const detailsDesc = document.getElementById('script-description');
+            const detailsInputs = document.getElementById('script-inputs');
+            const detailsInputsContainer = document.getElementById('details-inputs-container');
+
+            if (selectedScript) {
+                // Card is always visible
+                detailsDesc.textContent = selectedScript.description || "No description available.";
+                detailsInputs.textContent = selectedScript.input_description || "Standard Excel Input.";
+                if (detailsInputsContainer) detailsInputsContainer.style.display = 'flex';
+            } else {
+                // Reset to default
+                detailsDesc.textContent = "Please select the script to show the details.";
+                if (detailsInputsContainer) detailsInputsContainer.style.display = 'none';
+            }
         }
 
         // Trigger change event manually for listeners

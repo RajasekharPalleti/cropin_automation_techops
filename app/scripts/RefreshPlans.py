@@ -1,4 +1,9 @@
-# Author: Rajasekhar Palleti
+"""
+Triggers a refresh of crop plans by fetching and re-submitting data.
+
+Inputs:
+Excel file with 'ca_id' column.
+"""
 # ca_id is read from an Excel file. Each ca_id is processed using GET and PUT APIs with retries.
 # The results are saved back to a new Excel file.
 

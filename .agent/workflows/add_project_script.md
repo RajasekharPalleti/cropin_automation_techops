@@ -9,6 +9,15 @@ Follow these steps strictly whenever adding a new script:
     - Ensure it fits the project structure (`run` function signature).
     - functionality should use the `token` from `config` for authentication.
     - Adapt hardcoded values to be configurable.
+    - **Add Docstring**: Ensure the script has a structured docstring at the top of the file:
+      ```python
+      """
+      [Short Description]
+
+      Inputs:
+      [Input Details]
+      """
+      ```
 
 2. **Create Excel Template**
     - Create a corresponding Excel file in `sample_templates/` (e.g., `Script.xlsx`).

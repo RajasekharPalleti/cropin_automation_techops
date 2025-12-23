@@ -1,5 +1,12 @@
+"""
+Adds tags to entities in bulk using the Master API.
+
+Inputs:
+Excel file with Entity IDs and Tag Names.
+"""
 import pandas as pd
 import requests
+
 import time
 
 def post_data_to_api(post_api_url, access_token_bearer, input_excel_file, output_excel_file, log_callback=None):

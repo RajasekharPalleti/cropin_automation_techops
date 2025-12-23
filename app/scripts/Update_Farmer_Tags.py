@@ -1,8 +1,16 @@
 
+"""
+Updates tags associated with farmers.
+
+Inputs:
+Excel file with 'farmer_id' and 'tags' (comma-separated IDs).
+"""
+
 import json
 import requests
 import time
 import pandas as pd
+
 from concurrent.futures import ThreadPoolExecutor
 
 def parse_comma_ids(cell):

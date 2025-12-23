@@ -1,3 +1,9 @@
+"""
+Enables Plot Risk in bulk (batch mode) for multiple areas.
+
+Inputs:
+Excel file with croppable_area_id. Supports batch processing.
+"""
 import pandas as pd
 import requests
 import time

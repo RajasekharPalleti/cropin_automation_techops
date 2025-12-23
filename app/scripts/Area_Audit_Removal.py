@@ -1,5 +1,12 @@
+"""
+Removes area audits for specified croppable areas.
+
+Inputs:
+Excel file with Croppable Area IDs (`ca_id`).
+"""
 import pandas as pd
 import requests
+
 import time
 
 def run(input_excel_file, output_excel_file, config, log_callback=None):

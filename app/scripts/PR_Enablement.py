@@ -1,3 +1,9 @@
+"""
+Enables Plot Risk for specific croppable areas.
+
+Inputs:
+Excel file with croppable_area_id and optionally farmer_id.
+"""
 import pandas as pd
 import requests
 import time

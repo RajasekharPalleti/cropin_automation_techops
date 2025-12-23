@@ -1,7 +1,14 @@
+"""
+Updates additional attributes for farmers based on configured keys.
+
+Inputs:
+Excel file with 'farmer_id' and columns matching configured attribute keys.
+"""
 import pandas as pd
 import requests
 import json
 import time
+
 from concurrent.futures import ThreadPoolExecutor
 
 def run(input_excel_file, output_excel_file, config, log_callback=None):

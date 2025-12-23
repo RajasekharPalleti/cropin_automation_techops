@@ -1,4 +1,11 @@
+"""
+Adds new users to the system and optionally uploads images.
+
+Inputs:
+Excel file with User details (Name, Email, Role, etc.).
+"""
 import pandas as pd
+
 import requests
 import json
 import time

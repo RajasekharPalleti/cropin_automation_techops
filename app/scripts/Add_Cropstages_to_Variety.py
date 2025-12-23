@@ -1,3 +1,9 @@
+"""
+Adds crop stages to a specific variety.
+
+Inputs:
+Excel file with Variety ID, Crop Stage Name, Description, and Days After Sowing.
+"""
 import json
 import requests
 import pandas as pd

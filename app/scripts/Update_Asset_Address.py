@@ -1,8 +1,16 @@
 
+"""
+Updates address details for assets based on configured keys.
+
+Inputs:
+Excel file with 'asset_id' and columns for address values (e.g., address_value_1).
+"""
+
 import pandas as pd
 import requests
 import json
 import time
+
 from concurrent.futures import ThreadPoolExecutor
 
 def run(input_excel_file, output_excel_file, config, log_callback=None):

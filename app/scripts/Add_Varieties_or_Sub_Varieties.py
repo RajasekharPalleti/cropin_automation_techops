@@ -1,3 +1,9 @@
+"""
+Adds new varieties or sub-varieties with location and yield details.
+
+Inputs:
+Excel file with NE Lat, NE Lng, SW Lat, SW Lng, Country, Lat, Lng, Coords JSON, Loc Name, Yield, Yield Unit, Ref Unit, CropID, ParentID, Name, Nickname, HarvestDays.
+"""
 import pandas as pd
 import requests
 import json

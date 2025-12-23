@@ -1,3 +1,9 @@
+"""
+Updates additional attributes for assets based on configured keys.
+
+Inputs:
+Excel file with 'asset_id' and columns matching configured attribute keys.
+"""
 import pandas as pd
 import requests
 import json

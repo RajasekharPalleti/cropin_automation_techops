@@ -1,8 +1,16 @@
 
+"""
+Updates tags associated with assets.
+
+Inputs:
+Excel file with 'asset_id' and 'tags' (list or comma-separated).
+"""
+
 import json
 import requests
 import time
 import pandas as pd
+
 from concurrent.futures import ThreadPoolExecutor
 import ast
 

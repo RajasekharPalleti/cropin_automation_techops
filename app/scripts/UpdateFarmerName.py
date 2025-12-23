@@ -1,5 +1,12 @@
+"""
+Updates farmer names based on Farmer IDs.
+
+Inputs:
+Excel file with Farmer ID and New Name columns.
+"""
 import requests
 import pandas as pd
+
 import time
 
 def run(input_excel_file, output_excel_file, config, log_callback=None):

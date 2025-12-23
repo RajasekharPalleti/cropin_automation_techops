@@ -1,6 +1,12 @@
 # Author: Rajasekhar Palleti
 # QA Automation Script to Fetch Plan Type and Submit Plan Details via API (Refactored)
 
+"""
+Edits existing plans for crop varieties, supporting recurring schedules.
+
+Inputs:
+Excel file with plan_id, plan_name, plantype_id, schedule_type, no_of_days, execute_when, reference_date, required_days, and recurring details.
+"""
 import json
 import pandas as pd
 import requests
