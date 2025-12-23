@@ -14,188 +14,196 @@
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
-            <div class="sidebar-header">
-                <!-- SVG Lock Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="lock-icon">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-                <h2>Authentication</h2>
-            </div>
-            <!-- Sidebar content remains -->
-            <div class="input-group">
-                <label for="tenant-code">Tenant Name</label>
-                <input type="text" id="tenant-code" placeholder="Enter Tenant Name" value="asp">
-            </div>
-            <div class="input-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" placeholder="Enter Username" value="9649964096">
-            </div>
-            <div class="input-group">
-                <label for="password">Password</label>
-                <div class="password-wrapper">
-                    <input type="password" id="password" placeholder="******" value="123456">
-                    <span class="eye-icon">👁️</span>
+            <div class="auth-section">
+                <div class="sidebar-header">
+                    <!-- SVG Lock Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="lock-icon">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <h2>Authentication</h2>
                 </div>
-            </div>
-            <div class="input-group">
-                <label for="environment">Environment</label>
-                <!-- Hidden native select -->
-                <select id="environment" style="display: none;">
-                    <option value="prod1" selected>prod1</option>
-                    <option value="prod2">prod2</option>
-                </select>
 
-                <!-- Custom Environment Dropdown -->
-                <div class="custom-dropdown" id="env-dropdown">
-                    <div class="dropdown-selected" id="env-selected">
-                        <span id="env-selected-text">prod1</span>
-                        <span class="arrow">▼</span>
+                <div class="input-group">
+                    <label for="tenant-code">Tenant Name</label>
+                    <input type="text" id="tenant-code" placeholder="Enter Tenant Name" value="asp">
+                </div>
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter Username" value="9649964096">
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" placeholder="******" value="123456">
+                        <span class="eye-icon">👁️</span>
                     </div>
-                    <div class="dropdown-menu" id="env-menu">
-                        <ul class="dropdown-list" id="env-list">
-                            <li data-value="prod1">prod1</li>
-                            <li data-value="prod2">prod2</li>
-                        </ul>
+                </div>
+                <div class="input-group">
+                    <label for="environment">Environment</label>
+                    <!-- Hidden native select -->
+                    <select id="environment" style="display: none;">
+                        <option value="prod1" selected>prod1</option>
+                        <option value="prod2">prod2</option>
+                    </select>
+
+                    <!-- Custom Environment Dropdown -->
+                    <div class="custom-dropdown" id="env-dropdown">
+                        <div class="dropdown-selected" id="env-selected">
+                            <span id="env-selected-text">prod1</span>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="dropdown-menu" id="env-menu">
+                            <ul class="dropdown-list" id="env-list">
+                                <li data-value="prod1">prod1</li>
+                                <li data-value="prod2">prod2</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Resizer Handle -->
+            <div class="resizer" id="sidebar-resizer"></div>
 
             <div class="config-section">
-                <button class="config-btn" id="config-toggle">
-                    ⚙️ CONFIGURATION
-                </button>
-                <div class="config-content" id="config-content">
-                    <div class="input-group">
-                        <label for="put-api-url">Put/Post Api Url</label>
-                        <input type="text" id="put-api-url"
-                            placeholder="https://cloud.cropin.in/services/master/api/tags"
-                            value="https://cloud.cropin.in/services/master/api/tags">
+                <div class="sidebar-header">
+                    <h2>⚙️ CONFIGURATION</h2>
+                </div>
+                <div class="config-content" id="config-content" style="display: flex;">
+                    <div id="config-placeholder"
+                        style="color: #64748b; font-size: 0.9rem; font-style: italic; padding: 10px; text-align: center;">
+                        Please select a script to view configuration.
                     </div>
 
-                    <div id="extended-config" style="display: none;">
+                    <div id="config-fields-container" style="display: none;">
                         <div class="input-group">
-                            <label for="dataset">Dataset</label>
-                            <input type="text" id="dataset" placeholder="vw_rpt_application_blocks_v">
+                            <label for="put-api-url">Put/Post Api Url</label>
+                            <input type="text" id="put-api-url"
+                                placeholder="https://cloud.cropin.in/services/master/api/tags"
+                                value="https://cloud.cropin.in/services/master/api/tags">
                         </div>
 
-                        <div class="input-group">
-                            <label for="load-type">Load Type</label>
-                            <input type="text" id="load-type" placeholder="incremental">
+                        <div class="input-group" id="group-secondary-url" style="display: none;">
+                            <label for="secondary-api-url">Secondary Api Url</label>
+                            <input type="text" id="secondary-api-url" placeholder="https://..." value="">
                         </div>
 
-                        <div class="input-group">
-                            <label for="x-api-key">X-API-KEY</label>
-                            <input type="text" id="x-api-key" placeholder="Enter API Key">
-                        </div>
-                    </div>
+                        <div id="extended-config" style="display: none;">
+                            <div class="input-group">
+                                <label for="dataset">Dataset</label>
+                                <input type="text" id="dataset" placeholder="vw_rpt_application_blocks_v">
+                            </div>
 
-                    <!-- Specific Config for PR_Enablement -->
-                    <div id="pr-weather-config"
-                        style="display: none; margin-top: 15px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
-                        <div class="input-group">
-                            <label for="use-farmer-id">Include Farmer ID?</label>
-                            <select id="use-farmer-id"
-                                style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #fafafa; width: 100%;">
-                                <option value="no">No (Default)</option>
-                                <option value="yes">Yes (From Excel)</option>
-                            </select>
-                        </div>
-                    </div>
+                            <div class="input-group">
+                                <label for="load-type">Load Type</label>
+                                <input type="text" id="load-type" placeholder="incremental">
+                            </div>
 
-                    <!-- Specific Config for Update_Asset_add_Attribute -->
-                    <div id="asset-attr-config"
-                        style="display: none; margin-top: 15px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
-                        <div class="input-group">
-                            <label for="attr-count-select">Number of Attributes to Update</label>
-                            <select id="attr-count-select"
-                                style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #fafafa; width: 100%;">
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                            </select>
+                            <div class="input-group">
+                                <label for="x-api-key">X-API-KEY</label>
+                                <input type="text" id="x-api-key" placeholder="Enter API Key">
+                            </div>
                         </div>
 
-                        <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Enter JSON keys for attributes to
-                            update:</p>
-
-                        <div class="input-group" id="group-key-1">
-                            <label for="attr-key-1">Attribute Key 1 (Header: additional_attribute_1)</label>
-                            <input type="text" id="attr-key-1" placeholder="e.g. stateRegistrationinscrioEstadual">
-                        </div>
-                        <div class="input-group" id="group-key-2" style="display:none;">
-                            <label for="attr-key-2">Attribute Key 2 (Header: additional_attribute_2)</label>
-                            <input type="text" id="attr-key-2" placeholder="e.g. key2">
-                        </div>
-                        <div class="input-group" id="group-key-3" style="display:none;">
-                            <label for="attr-key-3">Attribute Key 3 (Header: additional_attribute_3)</label>
-                            <input type="text" id="attr-key-3" placeholder="e.g. key3">
-                        </div>
-                        <div class="input-group" id="group-key-4" style="display:none;">
-                            <label for="attr-key-4">Attribute Key 4 (Header: additional_attribute_4)</label>
-                            <input type="text" id="attr-key-4" placeholder="e.g. key4">
-                        </div>
-                    </div>
-
-                    <div id="address-config"
-                        style="display: none; margin-top: 15px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
-
-                        <div class="input-group">
-                            <label for="addr-count-select">Number of Address Keys to Update</label>
-                            <select id="addr-count-select"
-                                style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #fafafa; width: 100%;">
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                            </select>
+                        <!-- Specific Config for PR_Enablement -->
+                        <div id="pr-weather-config"
+                            style="display: none; margin-top: 15px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
+                            <div class="input-group">
+                                <label for="use-farmer-id">Include Farmer ID?</label>
+                                <select id="use-farmer-id">
+                                    <option value="no">No (Default)</option>
+                                    <option value="yes">Yes (From Excel)</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <p
-                            style="font-size: 13px; color: #666; margin-top: 10px; margin-bottom: 10px; line-height: 1.4; word-wrap: break-word;">
-                            Enter Address JSON Keys (e.g. <b>sublocalityLevel2</b>) which map to Excel columns
-                            <b>address_value_1</b>, etc.
-                        </p>
+                        <!-- Specific Config for Update_Asset_add_Attribute -->
+                        <div id="asset-attr-config">
+                            <div class="input-group">
+                                <label for="attr-count-select">Number of Attributes to Update</label>
+                                <select id="attr-count-select">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
 
-                        <div class="input-group" id="group-addr-1">
-                            <label for="address-key-1">Address Key 1 (Header: address_value_1)</label>
-                            <input type="text" id="address-key-1" placeholder="e.g. sublocalityLevel2">
-                        </div>
-                        <div class="input-group" id="group-addr-2" style="display:none;">
-                            <label for="address-key-2">Address Key 2 (Header: address_value_2)</label>
-                            <input type="text" id="address-key-2" placeholder="e.g. village">
-                        </div>
-                        <div class="input-group" id="group-addr-3" style="display:none;">
-                            <label for="address-key-3">Address Key 3 (Header: address_value_3)</label>
-                            <input type="text" id="address-key-3" placeholder="e.g. pincode">
-                        </div>
-                        <div class="input-group" id="group-addr-4" style="display:none;">
-                            <label for="address-key-4">Address Key 4 (Header: address_value_4)</label>
-                            <input type="text" id="address-key-4" placeholder="e.g. state">
-                        </div>
-                    </div>
+                            <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Enter JSON keys for attributes
+                                to
+                                update:</p>
 
-                    <!-- Specific Config for Area_Audit_To_CA -->
-                    <div id="area-audit-config"
-                        style="display: none; margin-top: 15px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
-                        <div class="input-group">
-                            <label for="area-unit-select">Area Unit</label>
-                            <input type="text" id="area-unit-select" placeholder="e.g. Hectare, Acre" value="Hectare"
-                                style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #fafafa; width: 100%;">
+                            <div class="input-group" id="group-key-1">
+                                <label for="attr-key-1">Attribute Key 1</label>
+                                <input type="text" id="attr-key-1" placeholder="e.g. stateRegistrationinscrioEstadual">
+                            </div>
+                            <div class="input-group" id="group-key-2" style="display:none;">
+                                <label for="attr-key-2">Attribute Key 2</label>
+                                <input type="text" id="attr-key-2" placeholder="e.g. key2">
+                            </div>
+                            <div class="input-group" id="group-key-3" style="display:none;">
+                                <label for="attr-key-3">Attribute Key 3</label>
+                                <input type="text" id="attr-key-3" placeholder="e.g. key3">
+                            </div>
+                            <div class="input-group" id="group-key-4" style="display:none;">
+                                <label for="attr-key-4">Attribute Key 4</label>
+                                <input type="text" id="attr-key-4" placeholder="e.g. key4">
+                            </div>
                         </div>
-                        <div class="input-group" style="margin-top: 10px;">
-                            <label for="force-crop-audited">Set 'cropAudited' Value?</label>
-                            <select id="force-crop-audited"
-                                style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #fafafa; width: 100%;">
-                                <option value="none">Don't Send (Default)</option>
-                                <option value="true">True</option>
-                                <option value="false">False</option>
-                            </select>
-                            <small style="color: #666; font-size: 11px;">Override the cropAudited flag to True if not
-                                works add False</small>
+
+                        <div id="address-config">
+
+                            <div class="input-group">
+                                <label for="addr-count-select">Number of Address Keys</label>
+                                <select id="addr-count-select">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
+
+                            <p
+                                style="font-size: 13px; color: #666; margin-top: 10px; margin-bottom: 10px; line-height: 1.4; word-wrap: break-word;">
+                                Map Address JSON Keys to Excel columns.
+                            </p>
+
+                            <div class="input-group" id="group-addr-1">
+                                <label for="address-key-1">Address Key 1</label>
+                                <input type="text" id="address-key-1" placeholder="e.g. sublocalityLevel2">
+                            </div>
+                            <div class="input-group" id="group-addr-2" style="display:none;">
+                                <label for="address-key-2">Address Key 2</label>
+                                <input type="text" id="address-key-2" placeholder="e.g. village">
+                            </div>
+                            <div class="input-group" id="group-addr-3" style="display:none;">
+                                <label for="address-key-3">Address Key 3</label>
+                                <input type="text" id="address-key-3" placeholder="e.g. pincode">
+                            </div>
+                            <div class="input-group" id="group-addr-4" style="display:none;">
+                                <label for="address-key-4">Address Key 4</label>
+                                <input type="text" id="address-key-4" placeholder="e.g. state">
+                            </div>
+                        </div>
+
+                        <!-- Specific Config for Area_Audit_To_CA -->
+                        <div id="area-audit-config">
+                            <div class="input-group">
+                                <label for="area-unit-select">Area Unit</label>
+                                <input type="text" id="area-unit-select" placeholder="e.g. Hectare, Acre"
+                                    value="Hectare">
+                            </div>
+                            <div class="input-group">
+                                <label for="force-crop-audited">Set 'cropAudited' Value?</label>
+                                <select id="force-crop-audited">
+                                    <option value="none">Don't Send (Default)</option>
+                                    <option value="true">True</option>
+                                    <option value="false">False</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -210,46 +218,50 @@
                         style="height: 35px; vertical-align: middle; margin-right: 10px;">
                     <h1 style="display: inline; vertical-align: middle; color: #009ade;">Automation Meta Console</h1>
                 </div>
-
             </div>
 
-            <div class="script-selection">
-                <label>Select Script</label>
-                <!-- Hidden native socket for logic compatibility -->
-                <select id="script-select" style="display: none;">
-                    <option value="" disabled selected>Select a script...</option>
-                </select>
+            <!-- Added 'card' class here for styling -->
+            <div class="card script-selection">
+                <div class="input-group">
+                    <label>Select Script to Automate</label>
+                    <!-- Hidden native socket for logic compatibility -->
+                    <select id="script-select" style="display: none;">
+                        <option value="" disabled selected>Select a script...</option>
+                    </select>
 
-                <!-- Custom Searchable Dropdown -->
-                <div class="custom-dropdown" id="custom-dropdown">
-                    <div class="dropdown-selected" id="dropdown-selected">
-                        <span id="selected-text">Select Script</span>
-                        <span class="arrow">▼</span>
-                    </div>
-                    <div class="dropdown-menu" id="dropdown-menu">
-                        <div class="dropdown-search">
-                            <input type="text" id="dropdown-search-input" placeholder="Search scripts...">
+                    <!-- Custom Searchable Dropdown -->
+                    <div class="custom-dropdown" id="custom-dropdown">
+                        <div class="dropdown-selected" id="dropdown-selected">
+                            <span id="selected-text">Select Script</span>
+                            <span class="arrow">▼</span>
                         </div>
-                        <ul class="dropdown-list" id="dropdown-list">
-                            <!-- Items populated by JS -->
-                        </ul>
+                        <div class="dropdown-menu" id="dropdown-menu">
+                            <div class="dropdown-search">
+                                <input type="text" id="dropdown-search-input" placeholder="Search scripts...">
+                            </div>
+                            <ul class="dropdown-list" id="dropdown-list">
+                                <!-- Items populated by JS -->
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="action-area">
-                <div class="step-one">
+            <!-- Changed to 'action-grid' and added 'card' classes -->
+            <div class="action-grid">
+                <div class="card step-card step-one">
                     <h2>1. Get Template</h2>
-                    <button class="btn-primary" id="generate-template-btn">📄 Generate Template</button>
+                    <button class="btn-primary" id="generate-template-btn" style="width: 100%;">📄 Generate
+                        Template</button>
                     <div class="info-box" id="template-info-box">
-                        <!-- Instructions or status can go here -->
                         Click to download template.
                     </div>
                 </div>
 
-                <div class="step-two">
+                <div class="card step-card step-two">
                     <h2>2. Upload & Run</h2>
-                    <label>Upload filled Excel</label>
+                    <label style="display:block; margin-bottom:10px; font-weight:500; color:#666;">Upload filled
+                        Excel</label>
                     <div class="drop-zone" id="drop-zone">
                         <div class="cloud-icon">☁️</div>
                         <div class="drop-text">
@@ -267,16 +279,18 @@
                         </button>
                     </div>
 
-                    <!-- Console Output -->
-                    <div class="console-box" id="console-box" style="display: none;">
-                        <div class="console-header">Console Output</div>
-                        <div class="console-content" id="console-content"></div>
-                    </div>
-
                     <!-- Hidden Status Area for download links -->
                     <div id="status-area"></div>
                 </div>
             </div>
+
+            <!-- Console (Now outside grid, full width at bottom) -->
+            <div class="console-box" id="console-box" style="display: none; margin-top: 30px;">
+                <div class="console-header" style="color: #666; margin-bottom: 5px; font-size: 0.8rem;">Console Output
+                </div>
+                <div class="console-content" id="console-content"></div>
+            </div>
+
         </div>
     </div>
     <script src="/static/js/app.js"></script>

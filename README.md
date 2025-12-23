@@ -33,7 +33,7 @@ Start the FastAPI server:
 ```bash
 uvicorn app.main:app --reload
 ```
-The application will be accessible at: `http://127.0.0.1:8000`
+The application will be accessible at: `http://127.0.0.1:4444`
 Or provided by your local host
 ## Usage
 

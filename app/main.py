@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 import shutil
 import os
 import importlib.util
@@ -13,6 +13,10 @@ import pandas as pd
 import asyncio
 
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
+
+# ... existing imports ...
+
 
 # ... existing imports ...
 
@@ -43,38 +47,59 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 
-# WebSocket Connection Manager
+# SSE Connection Manager
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
+        # Map client_id -> asyncio.Queue
+        self.active_connections: Dict[str, asyncio.Queue] = {}
 
-    async def connect(self, websocket: WebSocket, client_id: str):
-        await websocket.accept()
-        self.active_connections[client_id] = websocket
+    async def connect(self, client_id: str):
+        self.active_connections[client_id] = asyncio.Queue()
+        print(f"Client {client_id} connected for SSE.")
+        await self.active_connections[client_id].put("Connected to server (SSE)")
+
 
     def disconnect(self, client_id: str):
         if client_id in self.active_connections:
             del self.active_connections[client_id]
+            print(f"Client {client_id} disconnected.")
 
     async def send_log(self, message: str, client_id: str):
         if client_id in self.active_connections:
-            await self.active_connections[client_id].send_text(message)
+            await self.active_connections[client_id].put(message)
+
+    async def stream_logs(self, client_id: str):
+        try:
+            queue = self.active_connections[client_id]
+            while True:
+                # Wait for message
+                message = await queue.get()
+                # Format as SSE event
+                yield f"data: {message}\n\n"
+        except asyncio.CancelledError:
+            self.disconnect(client_id)
+            print(f"Stream cancelled for {client_id}")
 
 manager = ConnectionManager()
 
-@app.websocket("/ws/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    await manager.connect(websocket, client_id)
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(client_id)
+@app.get("/api/logs/{client_id}")
+async def sse_endpoint(client_id: str):
+    await manager.connect(client_id)
+    return StreamingResponse(manager.stream_logs(client_id), media_type="text/event-stream")
 
 @app.get("/")
 async def read_root():
@@ -110,12 +135,12 @@ async def list_scripts():
             "label": "Base Api Url (Fixed in Script)",
             "requires_input": True
         },
-        "Update_Asset_add_Attribute.py": {
+        "Update_Asset_Additional_Attribute.py": {
             "url": "https://cloud.cropin.in/services/farm/api/assets",
             "label": "Base Api Url",
             "requires_input": True
         },
-        "Update_Farmer_Addtl_Atrribute.py": {
+        "Update_Farmer_Additional_Attribute.py": {
             "url": "https://cloud.cropin.in/services/farm/api/farmers",
             "label": "Base Api Url",
             "requires_input": True
@@ -145,6 +170,11 @@ async def list_scripts():
             "label": "Base Api Url",
             "requires_input": True
         },
+        "Update_Asset_Address.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/assets",
+            "label": "Base Api Url",
+            "requires_input": True
+        },
         "PR_Enablement_Bulk.py": {
             "url": "https://cloud.cropin.in/services/farm/api/croppable-areas/plot-risk/batch",
             "label": "Plot Risk URL",
@@ -158,6 +188,25 @@ async def list_scripts():
         "Area_Audit_To_CA.py": {
             "url": "https://cloud.cropin.in/services/farm/api/croppable-areas",
             "label": "Croppable Area API URL",
+            "requires_input": True
+        },
+        "Add_Cropstages_to_Variety.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/varieties",
+            "label": "Variety API URL",
+            "url2": "https://cloud.cropin.in/services/farm/api/crop-stages",
+            "label2": "Crop Stage API URL",
+            "requires_input": True
+        },
+        "Add_Seed_Grades_to_Variety.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/varieties",
+            "label": "Variety API URL",
+            "url2": "https://cloud.cropin.in/services/farm/api/seed-grades",
+            "label2": "Seed Grade API URL",
+            "requires_input": True
+        },
+        "Add_Varieties_or_Sub_Varieties.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/varieties",
+            "label": "Variety API URL",
             "requires_input": True
         }
     }
@@ -173,6 +222,8 @@ async def list_scripts():
                 "name": filename, 
                 "url": config["url"],
                 "label": config["label"],
+                "url2": config.get("url2"),
+                "label2": config.get("label2"),
                 "requires_input": config.get("requires_input", True)
             })
     
@@ -288,3 +339,7 @@ async def execute_script(
         traceback.print_exc()
         await manager.send_log(f"Error: {str(e)}", client_id)
         raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=4444)

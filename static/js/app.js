@@ -7,11 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusArea = document.getElementById('status-area');
     const generateTemplateBtn = document.getElementById('generate-template-btn');
 
-    // Toggle Config
-    configToggle.addEventListener('click', () => {
-        configContent.classList.toggle('open');
-    });
-
     // Password Toggle
     const passwordInput = document.getElementById('password');
     const eyeIcon = document.querySelector('.eye-icon');
@@ -78,6 +73,10 @@ document.addEventListener('DOMContentLoaded', () => {
         statusArea.innerHTML = '';
         consoleBox.style.display = 'none';
 
+        // Show config fields if script is selected
+        document.getElementById('config-placeholder').style.display = 'none';
+        document.getElementById('config-fields-container').style.display = 'block';
+
         // Auto-update API URL & Label & Extended Config based on selection
         const selectedScript = scriptsData.find(s => s.name === value);
 
@@ -92,6 +91,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectedScript.label) {
                 const label = document.querySelector('label[for="put-api-url"]');
                 if (label) label.textContent = selectedScript.label;
+            }
+
+            // Secondary URL Logic
+            const secGroup = document.getElementById('group-secondary-url');
+            const secInput = document.getElementById('secondary-api-url');
+            const secLabel = document.querySelector('label[for="secondary-api-url"]');
+
+            if (selectedScript.url2) {
+                secGroup.style.display = 'block';
+                secInput.value = selectedScript.url2;
+                if (selectedScript.label2) secLabel.textContent = selectedScript.label2;
+                else secLabel.textContent = "Secondary Api Url";
+            } else {
+                secGroup.style.display = 'none';
             }
 
             // Populate Extended Config
@@ -131,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Toggle Asset Attribute Config
             const assetConfig = document.getElementById('asset-attr-config');
             if (assetConfig) {
-                if (selectedScript.name === 'Update_Asset_add_Attribute.py' || selectedScript.name === 'Update_Farmer_Addtl_Atrribute.py') {
+                if (selectedScript.name === 'Update_Asset_Additional_Attribute.py' || selectedScript.name === 'Update_Farmer_Additional_Attribute.py') {
                     assetConfig.style.display = 'block';
                 } else {
                     assetConfig.style.display = 'none';
@@ -141,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Toggle Address Config
             const addrConfig = document.getElementById('address-config');
             if (addrConfig) {
-                if (selectedScript.name === 'Update_Farmer_Address.py') {
+                if (selectedScript.name === 'Update_Farmer_Address.py' || selectedScript.name === 'Update_Asset_Address.py') {
                     addrConfig.style.display = 'block';
                 } else {
                     addrConfig.style.display = 'none';
@@ -346,6 +359,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Update Drop Zone UI to show file
+        const dropText = dropZone.querySelector('.drop-text');
+        if (dropText) {
+            dropText.innerHTML = `<strong>${file.name}</strong><p>Ready to upload</p>`;
+        }
+
         // 1. Upload File immediately
         const formData = new FormData();
         formData.append('file', file);
@@ -358,20 +377,19 @@ document.addEventListener('DOMContentLoaded', () => {
         })
             .then(response => response.json())
             .then(data => {
-                currentUploadedFilename = data.filename; // actually we need the one returned by server if modified
-                // The server returns "filename" (original) and "server_path" (input_...)
-                // Our execute endpoint expects just the original filename part if it reconstructs "input_" 
-                // OR we passed "filename" back.
-                // Server: return {"filename": file.filename, "server_path": input_filename}
-                // Execute: input_filename = f"input_{input_filename}" in main.py? 
-                // looking at main.py: input_path = os.path.join(UPLOAD_DIR, f"input_{input_filename}")
-                // So we should pass content of file.filename
-
+                currentUploadedFilename = data.filename;
                 statusArea.innerHTML = '<div style="color: green;">Uploaded: ' + file.name + '</div>';
                 runContainer.style.display = 'block';
+                // Also update dropzone to show success
+                if (dropText) {
+                    dropText.innerHTML = `<strong>${file.name}</strong><p style="color: green;">✅ Uploaded Successfully</p>`;
+                }
             })
             .catch(err => {
                 statusArea.innerHTML = '<div style="color: red;">Upload Failed: ' + err.message + '</div>';
+                if (dropText) {
+                    dropText.innerHTML = `<strong>${file.name}</strong><p style="color: red;">❌ Upload Failed</p>`;
+                }
             });
     }
 
@@ -397,12 +415,21 @@ document.addEventListener('DOMContentLoaded', () => {
         consoleContent.appendChild(connLine);
         runBtn.disabled = true;
 
-        // 2. Connect WebSocket
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws/${clientId}`;
-        const ws = new WebSocket(wsUrl);
+        // 2. Connect SSE for Logs
+        console.log("Connecting SSE for logs...");
+        const evtSource = new EventSource('/api/logs/' + clientId);
+        let sseConnected = false;
 
-        ws.onmessage = (event) => {
+        evtSource.onopen = () => {
+            console.log("SSE Connected");
+            sseConnected = true;
+            // Only start execution once we know we are connected
+            if (sseConnected) {
+                startExecution();
+            }
+        };
+
+        evtSource.onmessage = (event) => {
             const logLine = document.createElement('div');
             logLine.className = 'console-line';
             logLine.textContent = '> ' + event.data;
@@ -410,8 +437,13 @@ document.addEventListener('DOMContentLoaded', () => {
             consoleContent.scrollTop = consoleContent.scrollHeight; // Auto-scroll
         };
 
-        ws.onopen = () => {
-            // 3. Execute Script
+        evtSource.onerror = (err) => {
+            console.error("SSE Error:", err);
+            // Verify if it was a connection error before start or during
+            // If we haven't started yet, we might want to warn
+        };
+
+        function startExecution() {
             const startLine = document.createElement('div');
             startLine.className = 'console-line';
             startLine.textContent = '> Connected. Starting execution...';
@@ -426,17 +458,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Check script name for Logic
             const scriptNameForConfig = scriptSelect.value;
+            // ... existing config logic ...
 
-            if (scriptNameForConfig === 'Update_Farmer_Address.py') {
-                // Read Address Keys
+            // Re-implementing logic from original file since we are replacing a huge block
+            // NOTE: Simplification here for brevity in replacement tool, assuming original logic 
+            // for gathering 'attrKeys' and 'config' object is preserved or re-written.
+
+            // To be safe and precise with the replacement tool, I will copy the config construction logic 
+            // from the original file but wrap it in this new function.
+
+            if (scriptNameForConfig === 'Update_Farmer_Address.py' || scriptNameForConfig === 'Update_Asset_Address.py') {
                 const addrCount = parseInt(document.getElementById('addr-count-select').value) || 1;
-
-                // Clear any previous (e.g. from accidental double push)
                 attrKeys = [];
-
                 const k1 = document.getElementById('address-key-1').value;
                 if (k1) attrKeys.push(k1);
-
                 if (addrCount >= 2) {
                     const k2 = document.getElementById('address-key-2').value;
                     if (k2) attrKeys.push(k2);
@@ -449,16 +484,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const k4 = document.getElementById('address-key-4').value;
                     if (k4) attrKeys.push(k4);
                 }
-
             } else {
-                // Default Attribute Keys
                 attrKeys.push(document.getElementById('attr-key-1').value);
                 if (attrCount >= 2) attrKeys.push(document.getElementById('attr-key-2').value);
                 if (attrCount >= 3) attrKeys.push(document.getElementById('attr-key-3').value);
                 if (attrCount >= 4) attrKeys.push(document.getElementById('attr-key-4').value);
             }
 
-            // Area Audit Unit & Crop Audited Check
             const areaUnit = document.getElementById('area-unit-select') ? document.getElementById('area-unit-select').value : "Hectare";
             const forceCropAuditedVal = document.getElementById('force-crop-audited') ? document.getElementById('force-crop-audited').value : "none";
 
@@ -468,6 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 environment: document.getElementById('environment').value,
                 tenant_code: document.getElementById('tenant-code').value,
                 post_api_url: postApiUrl,
+                secondary_api_url: document.getElementById('secondary-api-url').value,
                 use_farmer_id: useFarmerId,
                 attr_keys: attrKeys,
                 unit: areaUnit,
@@ -476,7 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData();
             formData.append('script_name', scriptSelect.value);
-            // Send filename if exists, otherwise empty
             if (currentUploadedFilename) {
                 formData.append('input_filename', currentUploadedFilename);
             }
@@ -489,7 +521,6 @@ document.addEventListener('DOMContentLoaded', () => {
             })
                 .then(response => {
                     if (response.ok) {
-                        // Extract filename from Content-Disposition header if possible
                         const disposition = response.headers.get('Content-Disposition');
                         let filename = 'Result.xlsx';
                         if (disposition && disposition.indexOf('attachment') !== -1) {
@@ -499,14 +530,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 filename = matches[1].replace(/['"]/g, '');
                             }
                         } else {
-                            // Fallback logic
                             if (currentUploadedFilename) {
                                 filename = 'Result_' + currentUploadedFilename;
                             } else {
-                                // Direct run fallback
                                 filename = 'Result_' + scriptSelect.value.replace('.py', '.json');
-                                // Note: We default to .json for direct run here as per request, 
-                                // but ideally backend sends header.
                             }
                         }
                         return response.blob().then(blob => ({ blob, filename }));
@@ -516,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(({ blob, filename }) => {
                     const finishLine = document.createElement('div');
                     finishLine.className = 'console-line';
-                    finishLine.style.color = '#00ff00'; // Bright green for success
+                    finishLine.style.color = '#00ff00';
                     finishLine.textContent = '> Execution Finished. Downloading ' + filename + '...';
                     consoleContent.appendChild(finishLine);
                     consoleContent.scrollTop = consoleContent.scrollHeight;
@@ -531,29 +558,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     statusArea.innerHTML = '<div style="color: green;">Success! Check downloads.</div>';
                     runBtn.disabled = false;
-                    ws.close();
+                    // Close SSE
+                    evtSource.close();
+                    const closeLine = document.createElement('div');
+                    closeLine.className = 'console-line';
+                    closeLine.style.color = 'green';
+                    closeLine.textContent = '> Connection closed normally.';
+                    consoleContent.appendChild(closeLine);
                 })
                 .catch(error => {
                     const errLine = document.createElement('div');
                     errLine.className = 'console-line';
-                    errLine.style.color = '#ff4444'; // Red for error
+                    errLine.style.color = '#ff4444';
                     errLine.textContent = '> ERROR: ' + error.message;
                     consoleContent.appendChild(errLine);
                     consoleContent.scrollTop = consoleContent.scrollHeight;
 
                     statusArea.innerHTML = '<div style="color: red;">Execution Failed</div>';
                     runBtn.disabled = false;
-                    ws.close();
+                    evtSource.close();
                 });
-        };
-
-        ws.onerror = (e) => {
-            const errLine = document.createElement('div');
-            errLine.className = 'console-line';
-            errLine.style.color = '#ff4444';
-            errLine.textContent = '> WebSocket Error.';
-            consoleContent.appendChild(errLine);
-        };
+        }
     });
 
     // Generate Template Logic (Mock)
@@ -588,4 +613,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Template Error: ' + error.message);
             });
     });
+
+    // --- Draggable Sidebar Logic ---
+    const resizer = document.getElementById('sidebar-resizer');
+    const authSection = document.querySelector('.auth-section');
+    const sidebar = document.querySelector('.sidebar');
+
+    if (resizer && authSection && sidebar) {
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            e.preventDefault(); // Prevent text selection immediately
+            resizer.classList.add('active');
+            document.body.style.cursor = 'row-resize';
+            document.body.style.userSelect = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+
+            // Correct calculation: height = mouse position - top of the element
+            // This accounts for sidebar padding/offsets automatically
+            const authRect = authSection.getBoundingClientRect();
+            let newHeight = e.clientY - authRect.top;
+
+            // Constraints (e.g. 150px min to avoid crushing, up to max)
+            const sidebarHeight = sidebar.clientHeight;
+            const minHeight = 150;
+            const maxHeight = sidebarHeight - 150; // Keep space for config
+
+            if (newHeight < minHeight) newHeight = minHeight;
+            if (newHeight > maxHeight) newHeight = maxHeight;
+
+            // Apply new height
+            authSection.style.height = `${newHeight}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                resizer.classList.remove('active');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+        });
+    }
 });
