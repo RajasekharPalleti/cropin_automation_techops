@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Automation Meta Console</title>
+    <title>TechOps Automation Console</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="icon" href="/static/images/logo.png" type="image/png">
 </head>
 
@@ -217,7 +218,7 @@
                 <div class="header-left">
                     <img src="/static/images/cropin_text.png" alt="Cropin"
                         style="height: 35px; vertical-align: middle; margin-right: 10px;">
-                    <h1 style="display: inline; vertical-align: middle; color: #009ade;">Automation Meta Console</h1>
+                    <h1 style="display: inline; vertical-align: middle; color: #009ade;">TechOps Automation Console</h1>
                 </div>
             </div>
 
@@ -263,16 +264,19 @@
             <!-- Changed to 'action-grid' and added 'card' classes -->
             <div class="action-grid">
                 <div class="card step-card step-one">
-                    <h2>1. Get Template</h2>
-                    <button class="btn-primary" id="generate-template-btn" style="width: 100%;">📄 Generate
+                    <h2><span class="material-icons" style="vertical-align: middle;">description</span> Get Template
+                    </h2>
+                    <button class="btn-primary" id="generate-template-btn" style="width: 100%;"><span
+                            class="material-icons">cloud_download</span> Generate
                         Template</button>
                     <div class="info-box" id="template-info-box">
-                        Click to download template.
+                        ℹ️ Click the <strong>Generate Template</strong> button to download the formatted Excel template.
                     </div>
                 </div>
 
                 <div class="card step-card step-two">
-                    <h2>2. Upload & Run</h2>
+                    <h2><span class="material-icons" style="vertical-align: middle;">cloud_upload</span> Upload & Run
+                    </h2>
                     <label style="display:block; margin-bottom:10px; font-weight:500; color:#666;">Upload filled
                         Excel</label>
                     <div class="drop-zone" id="drop-zone">

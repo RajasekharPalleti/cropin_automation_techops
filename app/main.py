@@ -178,7 +178,7 @@ async def list_scripts():
         },
         "PR_Enablement_Bulk.py": {
             "url": "https://cloud.cropin.in/services/farm/api/croppable-areas/plot-risk/batch",
-            "label": "Plot Risk URL",
+            "label": "Base Api Url",
             "requires_input": True
         },
         "Edit_Plans_in_Variety_with_or_without_recurring.py": {

@@ -98,9 +98,19 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
             if not croppable_area_id or croppable_area_id.lower() == 'nan':
                 continue
 
+            # Determine Farmer ID based on config and excel
+            farmer_id = None
+            use_farmer_id_config = config.get("use_farmer_id", "no")
+
+            if use_farmer_id_config == "yes":
+                if 'farmer_id' in df.columns:
+                    val = str(row['farmer_id']).strip()
+                    if val and val.lower() != 'nan':
+                        farmer_id = val
+            
             payload.append({
                 "croppableAreaId": croppable_area_id,
-                "farmerId": None
+                "farmerId": farmer_id
             })
             index_map[croppable_area_id] = index
 

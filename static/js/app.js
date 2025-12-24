@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Toggle PR Config (shared for PR enablement scripts)
             const prConfig = document.getElementById('pr-weather-config');
             if (prConfig) {
-                if (selectedScript.name === 'PR_Enablement.py' || selectedScript.name === 'PR_and_Weather_Enablement.py') {
+                if (selectedScript.name === 'PR_Enablement.py' || selectedScript.name === 'PR_and_Weather_Enablement.py' || selectedScript.name === 'PR_Enablement_Bulk.py') {
                     prConfig.style.display = 'block';
                 } else {
                     prConfig.style.display = 'none';
