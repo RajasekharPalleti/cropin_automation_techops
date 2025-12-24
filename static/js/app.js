@@ -354,6 +354,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // --- Auth Validation Helper ---
+    function validateAuth() {
+        const t = tenantIn.value.trim();
+        const u = userIn.value.trim();
+        const p = passIn.value.trim();
+        return t !== '' && u !== '' && p !== '';
+    }
+
     // Handle Drag & Drop
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -367,8 +375,22 @@ document.addEventListener('DOMContentLoaded', () => {
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
+
+        if (!validateAuth()) {
+            alert('Please enter valid Tenant Name, Username, and Password to proceed.');
+            return;
+        }
+
         if (e.dataTransfer.files.length) {
             handleFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    // Intercept Browse Click
+    fileInput.addEventListener('click', (e) => {
+        if (!validateAuth()) {
+            e.preventDefault(); // Stop file dialog from opening
+            alert('Please enter valid Tenant Name, Username, and Password to proceed.');
         }
     });
 
