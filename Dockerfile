@@ -24,5 +24,9 @@ ENV PYTHONDONTWRITEBYTECODE 1
 # Ensure python output is sent straight to terminal (container logs) without buffering
 ENV PYTHONUNBUFFERED 1
 
-# Define the command to run the app
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-4444}"]
+# Copy the startup script and make it executable
+COPY run_railway.sh .
+RUN chmod +x run_railway.sh
+
+# Define the command to run the app using the script
+CMD ["./run_railway.sh"]
