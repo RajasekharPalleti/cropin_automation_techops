@@ -116,8 +116,13 @@ async def list_scripts():
             "label": "Post Api Url",
             "requires_input": True
         },
-        "UpdateFarmerName.py": {
+        "Update_Farmer_Details.py": {
             "url": "https://cloud.cropin.in/services/farm/api/farmers",
+            "label": "Base Api Url",
+            "requires_input": True
+        },
+        "Update_Asset_Details.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/assets",
             "label": "Base Api Url",
             "requires_input": True
         },
@@ -208,6 +213,11 @@ async def list_scripts():
         "Add_Varieties_or_Sub_Varieties.py": {
             "url": "https://cloud.cropin.in/services/farm/api/varieties",
             "label": "Variety API URL",
+            "requires_input": True
+        },
+        "Split_CAs.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/projects",
+            "label": "Base API URL",
             "requires_input": True
         }
     }

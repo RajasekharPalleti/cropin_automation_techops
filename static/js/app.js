@@ -142,12 +142,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Toggle Asset Attribute Config
-            const assetConfig = document.getElementById('asset-attr-config');
-            if (assetConfig) {
-                if (selectedScript.name === 'Update_Asset_Additional_Attribute.py' || selectedScript.name === 'Update_Farmer_Additional_Attribute.py') {
-                    assetConfig.style.display = 'block';
+            const attributeConfig = document.getElementById('attribute-config');
+            if (attributeConfig) {
+                if (selectedScript.name === 'Update_Asset_Additional_Attribute.py' || selectedScript.name === 'Update_Farmer_Additional_Attribute.py' || selectedScript.name === 'Update_Farmer_Details.py' || selectedScript.name === 'Update_Asset_Details.py') {
+                    attributeConfig.style.display = 'block';
                 } else {
-                    assetConfig.style.display = 'none';
+                    attributeConfig.style.display = 'none';
                 }
             }
 
