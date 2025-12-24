@@ -355,11 +355,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Auth Validation Helper ---
-    function validateAuth() {
-        const t = tenantIn.value.trim();
-        const u = userIn.value.trim();
-        const p = passIn.value.trim();
-        return t !== '' && u !== '' && p !== '';
+    function checkAuthAndAlert() {
+        const missing = [];
+        if (!tenantIn.value.trim()) missing.push('Tenant Name');
+        if (!userIn.value.trim()) missing.push('Username');
+        if (!passIn.value.trim()) missing.push('Password');
+
+        if (missing.length > 0) {
+            alert('Please enter valid ' + missing.join(', ') + ' to proceed.');
+            return false;
+        }
+        return true;
     }
 
     // Handle Drag & Drop
@@ -376,8 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
 
-        if (!validateAuth()) {
-            alert('Please enter valid Tenant Name, Username, and Password to proceed.');
+        if (!checkAuthAndAlert()) {
             return;
         }
 
@@ -388,9 +393,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Intercept Browse Click
     fileInput.addEventListener('click', (e) => {
-        if (!validateAuth()) {
+        if (!checkAuthAndAlert()) {
             e.preventDefault(); // Stop file dialog from opening
-            alert('Please enter valid Tenant Name, Username, and Password to proceed.');
         }
     });
 
