@@ -17,9 +17,12 @@ COPY . .
 RUN mkdir -p uploads outputs
 
 # Expose the port that the app runs on
-# Railway injects a PORT environment variable, but we expose 4444 as a default/documentation
 EXPOSE 4444
 
+# Prevent Python from writing pyc files to disc
+ENV PYTHONDONTWRITEBYTECODE 1
+# Ensure python output is sent straight to terminal (container logs) without buffering
+ENV PYTHONUNBUFFERED 1
+
 # Define the command to run the app
-# We use shell form to properly expand the $PORT variable provided by Railway
-CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-4444}"
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-4444}"]
