@@ -7,16 +7,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusArea = document.getElementById('status-area');
     const generateTemplateBtn = document.getElementById('generate-template-btn');
 
+    // --- Credential Persistence ---
+    const tenantIn = document.getElementById('tenant-code');
+    const userIn = document.getElementById('username');
+    const passIn = document.getElementById('password');
+
+    // 1. Load from Storage
+    if (localStorage.getItem('tenant_code')) tenantIn.value = localStorage.getItem('tenant_code');
+    if (localStorage.getItem('username')) userIn.value = localStorage.getItem('username');
+    if (localStorage.getItem('password')) passIn.value = localStorage.getItem('password');
+
+    // 2. Save on Change
+    const saveCreds = () => {
+        localStorage.setItem('tenant_code', tenantIn.value);
+        localStorage.setItem('username', userIn.value);
+        localStorage.setItem('password', passIn.value);
+    };
+
+    tenantIn.addEventListener('input', saveCreds);
+    userIn.addEventListener('input', saveCreds);
+    passIn.addEventListener('input', saveCreds);
+
     // Password Toggle
-    const passwordInput = document.getElementById('password');
     const eyeIcon = document.querySelector('.eye-icon');
 
     eyeIcon.addEventListener('click', () => {
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
+        if (passIn.type === 'password') {
+            passIn.type = 'text';
             eyeIcon.textContent = '🙈'; // Monkey covering eyes (hidden) or just a slash eye
         } else {
-            passwordInput.type = 'password';
+            passIn.type = 'password';
             eyeIcon.textContent = '👁️';
         }
     });
