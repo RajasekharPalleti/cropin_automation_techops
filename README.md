@@ -29,12 +29,17 @@ pip install -r requirements.txt
 ```
 
 ### 3. Run the Application
-Start the FastAPI server:
-```bash
-uvicorn app.main:app --reload
-```
+You can use the provided scripts to start and stop the server easily on both **Windows** and **macOS/Linux**.
+
+**Start Server:**
+- **Windows**: Double-click `run_server.bat`
+- **macOS/Linux**: Run `./run_server.bat` in terminal
+
+**Stop Server:**
+- **Windows**: Double-click `stop_server.bat`
+- **macOS/Linux**: Run `./stop_server.bat` in terminal
+
 The application will be accessible at: `http://127.0.0.1:4444`
-Or provided by your local host
 ## Usage
 
 1.  **Select Script**: Choose the automation script you want to run from the dropdown.

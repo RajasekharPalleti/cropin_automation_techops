@@ -121,6 +121,8 @@ body {
 
 .input-group input,
 .input-group select {
+    width: 100%;
+    box-sizing: border-box;
     background: #fff;
     border: 1px solid #e2e8f0;
     padding: 10px 12px;
@@ -382,7 +384,11 @@ body {
     padding: 20px;
     font-family: 'Fira Code', 'Courier New', monospace;
     color: #4ade80;
-    height: 400px;
+    height: auto;
+    min-height: 200px;
+    max-height: 800px;
+    flex-shrink: 0;
+    resize: vertical;
     overflow-y: auto;
     font-size: 1rem;
     box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
@@ -510,7 +516,9 @@ body {
     background-color: #e3f2fd;
     /* Keep blue hover for contrast or switch to light green */
     color: var(--primary-color);
-}/* Script Details Section */
+}
+
+/* Script Details Section */
 .script-details {
     background: linear-gradient(135deg, #ffffff 0%, #f9fcff 100%);
     border-left: 4px solid var(--primary-color);

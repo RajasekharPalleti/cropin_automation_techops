@@ -425,6 +425,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show console
         consoleBox.style.display = 'block';
+
+        // Immediate scroll (next tick)
+        setTimeout(() => {
+            const mainContent = document.querySelector('.main-content');
+            mainContent.scrollTo({ top: mainContent.scrollHeight, behavior: 'smooth' });
+        }, 0);
         consoleContent.innerHTML = ''; // Clear previous
         const connLine = document.createElement('div');
         connLine.className = 'console-line';
@@ -518,6 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tenant_code: document.getElementById('tenant-code').value,
                 post_api_url: postApiUrl,
                 secondary_api_url: document.getElementById('secondary-api-url').value,
+                x_api_key: document.getElementById('x-api-key').value,
                 use_farmer_id: useFarmerId,
                 attr_keys: attrKeys,
                 unit: areaUnit,

@@ -353,7 +353,12 @@ async def execute_script(
             await asyncio.to_thread(run_wrapper)
             
             await manager.send_log("Script execution finished.", client_id)
-            return FileResponse(output_path, filename=output_filename, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            
+            if os.path.exists(output_path):
+                return FileResponse(output_path, filename=output_filename, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            else:
+                 # Raise 404 so the client can handle it as a known error instead of crashing on 500 text
+                 raise HTTPException(status_code=404, detail="Execution finished but no output file was generated. See logs for details.")
         else:
             raise HTTPException(status_code=400, detail="Script does not have a 'run' function")
 
