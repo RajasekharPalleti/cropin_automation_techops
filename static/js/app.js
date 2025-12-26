@@ -106,6 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
         statusArea.innerHTML = '';
         consoleBox.style.display = 'none';
 
+        // Reset Drop Zone text
+        const dropText = dropZone.querySelector('.drop-text');
+        if (dropText) {
+            dropText.innerHTML = `<strong>Drag and drop file here</strong><p>Limit 200MB per file • XLSX</p>`;
+        }
+        // Clear file input so 'change' event fires even if same file selected again
+        fileInput.value = '';
+
         // Show config fields if script is selected
         document.getElementById('config-placeholder').style.display = 'none';
         document.getElementById('config-fields-container').style.display = 'block';
@@ -115,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // UI Toggle for Direct Run vs Upload
         const stepOne = document.querySelector('.step-one');
-        const dropZone = document.getElementById('drop-zone');
+        // dropZone is already defined in outer scope
         const uploadLabel = document.querySelector('.step-two label'); // "Upload filled Excel"
         const runContainer = document.getElementById('run-container');
 
