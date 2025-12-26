@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (localStorage.getItem('is_script_running') === 'true') {
             const msg = "The session is running, please wait until finished or stop the process to proceed.";
             e.preventDefault();
-            e.returnValue = msg;
             return msg;
         }
     });
