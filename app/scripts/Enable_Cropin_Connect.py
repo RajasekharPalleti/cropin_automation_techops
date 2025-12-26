@@ -18,7 +18,7 @@ import os
 # =========================
 API_URL = "https://cloud.cropin.in/services/farm/api/acresquare/farmers-enable"
 BATCH_SIZE = 100
-DELAY = 1  # seconds
+DELAY = 5  # seconds
 
 def run(input_excel, output_excel, config, log_callback=None):
     """
