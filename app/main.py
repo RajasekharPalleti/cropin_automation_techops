@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 import shutil
@@ -65,14 +65,51 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # SSE Connection Manager
 class ConnectionManager:
     def __init__(self):
-        # Map client_id -> asyncio.Queue
+        # Map client_id -> asyncio.Queue (for live streaming)
         self.active_connections: Dict[str, asyncio.Queue] = {}
+        # Map client_id -> List[str] (for history/replay)
+        self.client_logs: Dict[str, List[str]] = {}
+        # Set of client_ids with active running tasks
+        self.active_tasks: set = set()
+        # Set of client_ids that requested cancellation
+        self.cancellation_requests: set = set()
+
+    def mark_active(self, client_id: str):
+        self.active_tasks.add(client_id)
+        # Ensure no pending cancel request from previous run
+        if client_id in self.cancellation_requests:
+            self.cancellation_requests.remove(client_id)
+
+    def mark_inactive(self, client_id: str):
+        if client_id in self.active_tasks:
+            self.active_tasks.remove(client_id)
+        if client_id in self.cancellation_requests:
+            self.cancellation_requests.remove(client_id)
+
+    def request_cancel(self, client_id: str):
+        self.cancellation_requests.add(client_id)
+
+    def is_cancelled(self, client_id: str) -> bool:
+        return client_id in self.cancellation_requests
+
+    def is_active(self, client_id: str) -> bool:
+        return client_id in self.active_tasks
+
+    def clear_logs(self, client_id: str):
+        self.client_logs[client_id] = []
 
     async def connect(self, client_id: str):
         self.active_connections[client_id] = asyncio.Queue()
         print(f"Client {client_id} connected for SSE.")
-        await self.active_connections[client_id].put("Connected to server (SSE)")
-
+        
+        # Replay history immediately upon connection
+        if client_id in self.client_logs and self.client_logs[client_id]:
+            await self.active_connections[client_id].put("Connected to server (SSE) - Resuming session...")
+            for message in self.client_logs[client_id]:
+                await self.active_connections[client_id].put(message)
+        else:
+             self.client_logs[client_id] = []
+             await self.active_connections[client_id].put("Connected to server (SSE).")
 
     def disconnect(self, client_id: str):
         if client_id in self.active_connections:
@@ -80,6 +117,12 @@ class ConnectionManager:
             print(f"Client {client_id} disconnected.")
 
     async def send_log(self, message: str, client_id: str):
+        # 1. Archive
+        if client_id not in self.client_logs:
+            self.client_logs[client_id] = []
+        self.client_logs[client_id].append(message)
+        
+        # 2. Stream if active
         if client_id in self.active_connections:
             await self.active_connections[client_id].put(message)
 
@@ -101,6 +144,23 @@ manager = ConnectionManager()
 async def sse_endpoint(client_id: str):
     await manager.connect(client_id)
     return StreamingResponse(manager.stream_logs(client_id), media_type="text/event-stream")
+
+@app.get("/api/status/{client_id}")
+async def get_task_status(client_id: str):
+    return {"is_running": manager.is_active(client_id)}
+
+@app.post("/api/clear_session/{client_id}")
+async def clear_session(client_id: str):
+    manager.clear_logs(client_id)
+    manager.mark_inactive(client_id)
+    return {"status": "cleared"}
+
+@app.post("/api/stop/{client_id}")
+async def stop_execution(client_id: str):
+    if manager.is_active(client_id):
+        manager.request_cancel(client_id)
+        return {"status": "stopping", "message": "Stop requested. Process will terminate shortly."}
+    return {"status": "ignored", "message": "No active process found."}
 
 @app.get("/")
 async def read_root():
@@ -219,6 +279,16 @@ async def list_scripts():
             "url": "https://cloud.cropin.in/services/farm/api/projects",
             "label": "Base API URL",
             "requires_input": True
+        },
+        "Enable_Cropin_Connect.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/acresquare/farmers-enable",
+            "label": "Enablement API URL",
+            "requires_input": True
+        },
+        "Delete_Users.py": {
+            "url": "https://cloud.cropin.in/services/user/api/users/bulk",
+            "label": "Delete API URL",
+            "requires_input": True
         }
     }
     
@@ -287,29 +357,24 @@ async def upload_file(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
     return {"filename": file.filename, "server_path": input_filename}
 
-@app.post("/api/execute")
-async def execute_script(
-    script_name: str = Form(...),
-    input_filename: str = Form(None), # Optional now
-    config: str = Form(...),
-    client_id: str = Form(...) # To send logs to the right client
+@app.get("/api/download/{filename}")
+async def download_result(filename: str):
+    file_path = os.path.join(OUTPUT_DIR, filename)
+    if os.path.exists(file_path):
+        return FileResponse(file_path, filename=filename, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    raise HTTPException(status_code=404, detail="File not found")
+
+async def process_background_script(
+    script_path: str,
+    script_name: str,
+    input_path: str,
+    output_path: str,
+    output_filename: str,
+    config_dict: dict,
+    client_id: str
 ):
-    script_path = os.path.join(SCRIPTS_DIR, script_name)
-    if not os.path.exists(script_path):
-        raise HTTPException(status_code=404, detail="Script not found")
-
-    input_path = None
-    output_filename = f"{script_name.replace('.py', '')}_Output.xlsx"
-    
-    if input_filename:
-        input_path = os.path.join(UPLOAD_DIR, f"input_{input_filename}")
-        if not os.path.exists(input_path):
-            raise HTTPException(status_code=404, detail="Input file not found")
-        
-    output_path = os.path.join(OUTPUT_DIR, output_filename)
-
     try:
-        config_dict = json.loads(config)
+        manager.mark_active(client_id)
         
         # AUTH LOGIC
         username = config_dict.get("username")
@@ -329,19 +394,29 @@ async def execute_script(
                 else:
                     raise Exception("Authentication failed: No token returned.")
             except Exception as auth_err:
-                 await manager.send_log(f"Auth Error: {str(auth_err)}", client_id)
-                 raise HTTPException(status_code=401, detail=f"Authentication failed: {str(auth_err)}")
+                 await manager.send_log(f"JOB_FAILED::Authentication failed: {str(auth_err)}", client_id)
+                 return
         
         # Capture loop for threadsafe logging
+        # Note: Since we are in async function, we can just use manager.send_log directly if we were running async.
+        # But module.run is blocking, so we run it in a thread.
+        # The log_callback needs to schedule the coroutine on the loop.
+        
         loop = asyncio.get_running_loop()
 
         # Define Log Callback
         def log_callback(message):
-            # We need to run the async send_log from sync context
+            # Check for cancellation
+            # print(f"DEBUG: Checking cancellation for {client_id}. Cancelled: {manager.is_cancelled(client_id)}. Msg: {message[:20]}") 
+            if manager.is_cancelled(client_id):
+                print(f"DEBUG: Raising Stop Exception for {client_id}")
+                raise Exception("Job Stopped by User")
+
             try:
                asyncio.run_coroutine_threadsafe(manager.send_log(message, client_id), loop)
             except Exception as e:
                print(f"Log Error: {e}")
+
         # Load script module dynamically
         spec = importlib.util.spec_from_file_location("module.name", script_path)
         module = importlib.util.module_from_spec(spec)
@@ -365,18 +440,64 @@ async def execute_script(
             await manager.send_log("Script execution finished.", client_id)
             
             if os.path.exists(output_path):
-                return FileResponse(output_path, filename=output_filename, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                # Signal completion with filename
+                await manager.send_log(f"JOB_COMPLETED::{output_filename}", client_id)
             else:
-                 # Raise 404 so the client can handle it as a known error instead of crashing on 500 text
-                 raise HTTPException(status_code=404, detail="Execution finished but no output file was generated. See logs for details.")
+                 await manager.send_log("JOB_FAILED::Execution finished but no output file was generated.", client_id)
         else:
-            raise HTTPException(status_code=400, detail="Script does not have a 'run' function")
+            await manager.send_log("JOB_FAILED::Script does not have a 'run' function", client_id)
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        await manager.send_log(f"Error: {str(e)}", client_id)
-        raise HTTPException(status_code=500, detail=str(e))
+        await manager.send_log(f"JOB_FAILED::Error: {str(e)}", client_id)
+    finally:
+        manager.mark_inactive(client_id)
+
+
+@app.post("/api/execute")
+async def execute_script(
+    background_tasks: BackgroundTasks,
+    script_name: str = Form(...),
+    input_filename: str = Form(None), # Optional now
+    config: str = Form(...),
+    client_id: str = Form(...) # To send logs to the right client
+):
+    # Clear previous logs for this client since it's a new run
+    manager.clear_logs(client_id)
+
+    script_path = os.path.join(SCRIPTS_DIR, script_name)
+    if not os.path.exists(script_path):
+        raise HTTPException(status_code=404, detail="Script not found")
+
+    input_path = None
+    output_filename = f"{script_name.replace('.py', '')}_Output.xlsx"
+    
+    if input_filename:
+        input_path = os.path.join(UPLOAD_DIR, f"input_{input_filename}")
+        if not os.path.exists(input_path):
+            raise HTTPException(status_code=404, detail="Input file not found")
+        
+    output_path = os.path.join(OUTPUT_DIR, output_filename)
+
+    try:
+        config_dict = json.loads(config)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid config JSON")
+
+    # Add to background tasks
+    background_tasks.add_task(
+        process_background_script,
+        script_path,
+        script_name,
+        input_path,
+        output_path,
+        output_filename,
+        config_dict,
+        client_id
+    )
+    
+    return {"status": "queued", "message": "Script execution started in background"}
 
 if __name__ == "__main__":
     import uvicorn

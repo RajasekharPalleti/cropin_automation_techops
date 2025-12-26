@@ -7,6 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusArea = document.getElementById('status-area');
     const generateTemplateBtn = document.getElementById('generate-template-btn');
 
+    // Prevent accidental refresh
+    window.addEventListener('beforeunload', (e) => {
+        if (localStorage.getItem('is_script_running') === 'true') {
+            const msg = "The session is running, please wait until finished or stop the process to proceed.";
+            e.preventDefault();
+            e.returnValue = msg;
+            return msg;
+        }
+    });
+
     // --- Credential Persistence ---
     const tenantIn = document.getElementById('tenant-code');
     const userIn = document.getElementById('username');
@@ -57,6 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             scriptsData = data.scripts; // Now objects {name: "...", url: "..."}
             populateDropdown(scriptsData);
+
+            // Restore Selection if Running
+            // Note: Logic moved to Status Check block to avoid ghost sessions
         });
 
     function populateDropdown(scripts) {
@@ -409,10 +422,189 @@ document.addEventListener('DOMContentLoaded', () => {
     const runContainer = document.getElementById('run-container');
     const runBtn = document.getElementById('run-script-btn');
     const consoleBox = document.getElementById('console-box');
+
+    // Create STOP Button dynamically
+    const stopBtn = document.createElement('button');
+    stopBtn.id = 'stop-script-btn';
+    stopBtn.textContent = 'Stop Process';
+    stopBtn.style.cssText = 'display: none; margin-left:10px; background-color: #ff4444; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold;';
+    runContainer.appendChild(stopBtn);
+
+    stopBtn.addEventListener('click', () => {
+        if (confirm("Are you sure you want to stop the running process?")) {
+            stopBtn.disabled = true;
+            stopBtn.textContent = 'Stopping...';
+            fetch('/api/stop/' + clientId, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    console.log(data);
+                    const stopLine = document.createElement('div');
+                    stopLine.className = 'console-line';
+                    stopLine.style.color = 'orange';
+                    stopLine.textContent = '> Stop requested. Waiting for script to terminate...';
+                    consoleContent.appendChild(stopLine);
+                })
+                .catch(err => console.error("Stop Failed:", err));
+        }
+    });
+
     const consoleContent = document.getElementById('console-content');
 
-    // Generate specific client ID
-    const clientId = 'client_' + Math.random().toString(36).substr(2, 9);
+    // Generate persistent client ID
+    let clientId = localStorage.getItem('clientId');
+    if (!clientId) {
+        clientId = 'client_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('clientId', clientId);
+    }
+
+    // SSE Manager
+    let evtSource = null;
+
+    function connectSSE(onOpen = null) {
+        if (evtSource && evtSource.readyState !== EventSource.CLOSED) return;
+
+        console.log("Connecting SSE for logs...");
+        evtSource = new EventSource('/api/logs/' + clientId);
+
+        evtSource.onopen = () => {
+            console.log("SSE Connected");
+            if (onOpen) onOpen();
+        };
+
+        evtSource.onmessage = (event) => {
+            // Check for Special Events
+            if (event.data.startsWith('JOB_COMPLETED::')) {
+                const filename = event.data.split('::')[1];
+
+                const finishLine = document.createElement('div');
+                finishLine.className = 'console-line';
+                finishLine.style.color = '#00ff00';
+                finishLine.textContent = '> Execution Finished. Downloading ' + filename + '...';
+                consoleContent.appendChild(finishLine);
+                consoleContent.scrollTop = consoleContent.scrollHeight;
+
+                localStorage.setItem('is_script_running', 'false');
+
+                // Trigger Download
+                window.location.href = '/api/download/' + filename;
+
+                statusArea.innerHTML = '<div style="color: green;">Success! Check downloads.</div>';
+                runBtn.disabled = false;
+                stopBtn.style.display = 'none'; // Hide Stop
+
+                // Close SSE
+                if (evtSource) {
+                    evtSource.close();
+                    evtSource = null;
+                }
+                const closeLine = document.createElement('div');
+                closeLine.className = 'console-line';
+                closeLine.style.color = 'green';
+                closeLine.textContent = '> Connection closed. Job Done.';
+                consoleContent.appendChild(closeLine);
+                return;
+            }
+
+            if (event.data.startsWith('JOB_FAILED::')) {
+                const errorMsg = event.data.split('::')[1];
+                const errLine = document.createElement('div');
+                errLine.className = 'console-line';
+                errLine.style.color = '#ff4444';
+                errLine.textContent = '> ERROR: ' + errorMsg;
+                consoleContent.appendChild(errLine);
+                consoleContent.scrollTop = consoleContent.scrollHeight;
+
+                statusArea.innerHTML = '<div style="color: red;">Execution Failed</div>';
+                runBtn.disabled = false;
+                stopBtn.style.display = 'none'; // Hide Stop
+                localStorage.setItem('is_script_running', 'false');
+                return;
+            }
+
+            // Normal Log
+            const logLine = document.createElement('div');
+            logLine.className = 'console-line';
+            logLine.textContent = '> ' + event.data;
+            consoleContent.appendChild(logLine);
+            consoleContent.scrollTop = consoleContent.scrollHeight; // Auto-scroll
+        };
+
+        evtSource.onerror = (err) => {
+            console.error("SSE Error:", err);
+            // Don't close immediately, it might reconnect.
+        };
+    }
+
+    // Check if we need to restore session
+    if (localStorage.getItem('is_script_running') === 'true') {
+        const consoleBox = document.getElementById('console-box');
+        const runBtn = document.getElementById('run-script-btn');
+
+        // Verify with server if it's ACTUALLY running
+        fetch('/api/status/' + clientId)
+            .then(r => r.json())
+            .then(status => {
+                if (status.is_running) {
+                    // SERVER CONFIRMED: Proceed with Restore
+                    const savedScriptName = localStorage.getItem('running_script_name');
+                    if (savedScriptName) {
+                        selectScript(savedScriptName);
+                        if (consoleBox) consoleBox.style.display = 'block';
+                        if (runBtn) runBtn.disabled = true;
+                    }
+                    consoleBox.style.display = 'block';
+                    runBtn.disabled = true;
+                    stopBtn.style.display = 'inline-block'; // Show Stop on resume
+                    consoleContent.innerHTML = '';
+                    const resumeLine = document.createElement('div');
+                    resumeLine.className = 'console-line';
+                    resumeLine.style.color = '#FFA500'; // Orange
+                    resumeLine.textContent = '> The session is running, please wait until finished or stop the process to proceed.';
+                    consoleContent.appendChild(resumeLine);
+                    connectSSE();
+
+                    // Add Reset Button
+                    addResetButton();
+                } else {
+                    // SERVER DENIED: Ghost Session (Server likely restarted)
+                    console.warn("Server reported no active task. Clearing ghost session.");
+                    localStorage.setItem('is_script_running', 'false');
+                    localStorage.removeItem('running_script_name');
+
+                    // Optional: Notify user
+                    if (statusArea) statusArea.innerHTML = '<div style="color: orange;">Previous session was lost (Server restarted). Ready for new run.</div>';
+
+                    // Reset UI
+                    if (consoleBox) consoleBox.style.display = 'none';
+                    if (runBtn) runBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error("Status Check Failed:", err);
+            });
+    }
+
+    function addResetButton() {
+        // Check if exists
+        if (document.getElementById('reset-session-btn')) return;
+
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'reset-session-btn';
+        resetBtn.textContent = 'Force Reset';
+        resetBtn.style.cssText = 'margin-left: 10px; background-color: #ff4444; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;';
+
+        // Append near Run button or Status area
+        const runContainer = document.getElementById('run-container');
+        runContainer.appendChild(resetBtn);
+
+        resetBtn.addEventListener('click', () => {
+            if (confirm("Are you sure you want to force reset the session? Any running task logs will be disconnected.")) {
+                localStorage.setItem('is_script_running', 'false');
+                localStorage.removeItem('running_script_name');
+                location.reload();
+            }
+        });
+    }
 
     function handleFile(file) {
         console.log('Handling file:', file);
@@ -471,51 +663,106 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show console
         consoleBox.style.display = 'block';
-
-        // Immediate scroll (next tick)
         setTimeout(() => {
             const mainContent = document.querySelector('.main-content');
             mainContent.scrollTo({ top: mainContent.scrollHeight, behavior: 'smooth' });
         }, 0);
+
         consoleContent.innerHTML = ''; // Clear previous
         const connLine = document.createElement('div');
         connLine.className = 'console-line';
         connLine.textContent = '> Connecting to console...';
         consoleContent.appendChild(connLine);
         runBtn.disabled = true;
+        stopBtn.style.display = 'inline-block'; // Show Stop 
+        stopBtn.disabled = false;
+        stopBtn.textContent = 'Stop Process';
 
-        // 2. Connect SSE for Logs
-        console.log("Connecting SSE for logs...");
-        const evtSource = new EventSource('/api/logs/' + clientId);
-        let sseConnected = false;
+        // Persist State
+        localStorage.setItem('is_script_running', 'true');
+        localStorage.setItem('running_script_name', scriptSelect.value);
 
+        // HARD RESET: Close existing connection if any
+        if (evtSource) {
+            console.log("Closing existing SSE connection before new run.");
+            evtSource.close();
+            evtSource = null;
+        }
+
+        // Clear Session on Server first, THEN connect SSE, THEN start execution
+        fetch('/api/clear_session/' + clientId, { method: 'POST' })
+            .then(() => {
+                // console.log("Session cleared.");
+                connectSSE(() => {
+                    startExecution();
+                });
+            })
+            .catch(err => {
+                console.error("Failed to clear session:", err);
+                const warnLine = document.createElement('div');
+                warnLine.className = 'console-line';
+                warnLine.style.color = 'orange';
+                warnLine.textContent = '> Warning: Could not clear previous session logs. You may see duplicate history.';
+                consoleContent.appendChild(warnLine);
+
+                connectSSE(() => {
+                    startExecution();
+                });
+            });
+
+        // startExecution is called by onopen, so just connectSSE is enough to trigger the chain
+        // BUT wait, onopen calls startExecution ONLY if sseConnected was set.
+        // Let's verify startExecution location.
+        // The previous code had:
+        // connectSSE();
+        // startExecution();
+        // But connectSSE -> onopen -> startExecution call logic was: 
+        // "Only start execution once we know we are connected".
+
+        // Actually, looking at previous file content, `startExecution` was DEFINED inside the click handler
+        // but called explicitly after `connectSSE()` in the snippet I replaced?
+        // No, in step 21/30/etc it was:
+        // evtSource.onopen = () => { ... if(sseConnected) startExecution(); }
+
+        // So I just need to call connectSSE().
+
+        // Wait, startExecution function definition is inside the click handler scope.
+        // If I move connectSSE into a .then(), `startExecution` must be available to onopen?
+        // `connectSSE` is defined in outer scope. It uses `onopen`.
+        // `onopen` calls `startExecution`.
+        // `startExecution` is defined INSIDE the click handler.
+        // THIS IS A SCOPE PROBLEM. `connectSSE` (global) cannot call `startExecution` (local).
+
+        // Let's look at `connectSSE` definition in Step 65.
+        // It DOES NOT call startExecution.
+
+        /*
         evtSource.onopen = () => {
             console.log("SSE Connected");
-            sseConnected = true;
-            // Only start execution once we know we are connected
-            if (sseConnected) {
-                startExecution();
-            }
         };
+        */
 
-        evtSource.onmessage = (event) => {
-            const logLine = document.createElement('div');
-            logLine.className = 'console-line';
-            logLine.textContent = '> ' + event.data;
-            consoleContent.appendChild(logLine);
-            consoleContent.scrollTop = consoleContent.scrollHeight; // Auto-scroll
-        };
+        // So `startExecution` was called explicitly in the click handler in Step 65/69?
+        // Step 69:
+        // connectSSE();
+        // startExecution();
 
-        evtSource.onerror = (err) => {
-            console.error("SSE Error:", err);
-            // Verify if it was a connection error before start or during
-            // If we haven't started yet, we might want to warn
-        };
+        // So there is NO dependency on onopen in the current code (Step 69 view).
+        // Correct.
+
+        // So the plan is:
+        // 1. Clear Session.
+        // 2. connectSSE().
+        // 3. startExecution().
+
+
+
+
 
         function startExecution() {
             const startLine = document.createElement('div');
             startLine.className = 'console-line';
-            startLine.textContent = '> Connected. Starting execution...';
+            startLine.textContent = '> Starting execution...';
             consoleContent.appendChild(startLine);
 
             const postApiUrl = document.getElementById('put-api-url').value;
@@ -525,16 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const attrCount = parseInt(document.getElementById('attr-count-select').value) || 1;
             let attrKeys = [];
 
-            // Check script name for Logic
             const scriptNameForConfig = scriptSelect.value;
-            // ... existing config logic ...
-
-            // Re-implementing logic from original file since we are replacing a huge block
-            // NOTE: Simplification here for brevity in replacement tool, assuming original logic 
-            // for gathering 'attrKeys' and 'config' object is preserved or re-written.
-
-            // To be safe and precise with the replacement tool, I will copy the config construction logic 
-            // from the original file but wrap it in this new function.
 
             if (scriptNameForConfig === 'Update_Farmer_Address.py' || scriptNameForConfig === 'Update_Asset_Address.py') {
                 const addrCount = parseInt(document.getElementById('addr-count-select').value) || 1;
@@ -585,68 +823,33 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('config', JSON.stringify(config));
             formData.append('client_id', clientId);
 
+            // Execute (Background Task)
             fetch('/api/execute', {
                 method: 'POST',
                 body: formData
             })
                 .then(response => {
                     if (response.ok) {
-                        const disposition = response.headers.get('Content-Disposition');
-                        let filename = 'Result.xlsx';
-                        if (disposition && disposition.indexOf('attachment') !== -1) {
-                            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-                            var matches = filenameRegex.exec(disposition);
-                            if (matches != null && matches[1]) {
-                                filename = matches[1].replace(/['"]/g, '');
-                            }
-                        } else {
-                            if (currentUploadedFilename) {
-                                filename = 'Result_' + currentUploadedFilename;
-                            } else {
-                                filename = 'Result_' + scriptSelect.value.replace('.py', '.json');
-                            }
-                        }
-                        return response.blob().then(blob => ({ blob, filename }));
+                        return response.json();
                     }
                     return response.json().then(err => { throw new Error(err.detail || 'Execution Failed'); });
                 })
-                .then(({ blob, filename }) => {
-                    const finishLine = document.createElement('div');
-                    finishLine.className = 'console-line';
-                    finishLine.style.color = '#00ff00';
-                    finishLine.textContent = '> Execution Finished. Downloading ' + filename + '...';
-                    consoleContent.appendChild(finishLine);
-                    consoleContent.scrollTop = consoleContent.scrollHeight;
-
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-
-                    statusArea.innerHTML = '<div style="color: green;">Success! Check downloads.</div>';
-                    runBtn.disabled = false;
-                    // Close SSE
-                    evtSource.close();
-                    const closeLine = document.createElement('div');
-                    closeLine.className = 'console-line';
-                    closeLine.style.color = 'green';
-                    closeLine.textContent = '> Connection closed normally.';
-                    consoleContent.appendChild(closeLine);
+                .then(data => {
+                    const queuedLine = document.createElement('div');
+                    queuedLine.className = 'console-line';
+                    queuedLine.textContent = '> ' + data.message;
+                    consoleContent.appendChild(queuedLine);
                 })
                 .catch(error => {
                     const errLine = document.createElement('div');
                     errLine.className = 'console-line';
                     errLine.style.color = '#ff4444';
-                    errLine.textContent = '> ERROR: ' + error.message;
+                    errLine.textContent = '> Request Failed: ' + error.message;
                     consoleContent.appendChild(errLine);
-                    consoleContent.scrollTop = consoleContent.scrollHeight;
 
-                    statusArea.innerHTML = '<div style="color: red;">Execution Failed</div>';
+                    statusArea.innerHTML = '<div style="color: red;">Request Failed</div>';
                     runBtn.disabled = false;
-                    evtSource.close();
+                    localStorage.setItem('is_script_running', 'false');
                 });
         }
     });
