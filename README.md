@@ -4,7 +4,7 @@ This project is an automation utility designed for Cropin TechOps to streamline 
 
 ## Features
 
--   **Script Execution**: Run Python automation scripts (`AddTags`, `UpdateFarmerName`, etc.) directly from the browser.
+-   **Script Execution**: Run Python automation scripts (`AddTags`, `UpdateFarmerName`, `Enable_Or_Disable_User`, etc.) directly from the browser.
 -   **Excel Integration**: Upload Excel files as input and download processed results with status columns.
 -   **Live Console**: View real-time logs and execution feedback directly in the web UI.
 -   **Dynamic Configuration**: Authentication and API URLs are configurable via the UI.
