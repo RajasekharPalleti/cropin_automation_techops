@@ -4,7 +4,7 @@ This project is an automation utility designed for Cropin TechOps to streamline 
 
 ## Features
 
--   **Script Execution**: Run Python automation scripts (`AddTags`, `UpdateFarmerName`, `Enable_Or_Disable_User`, etc.) directly from the browser.
+-   **Script Execution**: Run Python automation scripts (`AddTags`, `UpdateFarmerName`, etc.) directly from the browser.
 -   **Excel Integration**: Upload Excel files as input and download processed results with status columns.
 -   **Live Console**: View real-time logs and execution feedback directly in the web UI.
 -   **Dynamic Configuration**: Authentication and API URLs are configurable via the UI.
@@ -38,6 +38,10 @@ You can use the provided scripts to start and stop the server easily on both **W
 **Stop Server:**
 - **Windows**: Double-click `stop_server.bat`
 - **macOS/Linux**: Run `./stop_server.bat` in terminal
+
+**Restart Server:**
+- **Windows**: Double-click `restart_server.bat`
+- **macOS/Linux**: Run `./restart_server.bat` in terminal
 
 The application will be accessible at: `http://127.0.0.1:4444`
 ## Usage
