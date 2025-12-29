@@ -27,12 +27,10 @@ def run(input_excel_path, output_excel_path, config):
     
     api_base_url = config.get("url")
     
-    # 29/12/2025: Add default URL if user not provides from config
     if not api_base_url or pd.isna(api_base_url):
          api_base_url = "https://cloud.cropin.in/services/user/api/users"
          print(f"⚠️ API URL not provided. Using default: {api_base_url}")
     token = config.get("token")
-
 
     # Delay to avoid rate limiting
     delay_time = 0.5
