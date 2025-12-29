@@ -289,6 +289,11 @@ async def list_scripts():
             "url": "https://cloud.cropin.in/services/user/api/users/bulk",
             "label": "Delete API URL",
             "requires_input": True
+        },
+        "Enable_Or_Disable_User.py": {
+            "url": "https://cloud.cropin.in/services/user/api/users",
+            "label": "Base Api Url",
+            "requires_input": True
         }
     }
     
