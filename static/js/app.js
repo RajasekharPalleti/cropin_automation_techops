@@ -868,7 +868,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const scriptName = scriptSelect.value;
-        statusArea.innerHTML = '<div style="color: blue;">Generating template...</div>';
+
+        // Target the info box in the "Generate Template" step
+        const templateInfoBox = document.getElementById('template-info-box');
+
+        // Show loading state
+        templateInfoBox.style.color = 'blue';
+        templateInfoBox.innerHTML = '<strong>Generating template...</strong>';
 
         fetch('/api/template/' + scriptName)
             .then(response => {
@@ -878,7 +884,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json().then(err => { throw new Error(err.detail || 'Error generating template'); });
             })
             .then(blob => {
-                statusArea.innerHTML = '';
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -886,10 +891,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
-                document.getElementById('template-info-box').textContent = "Template downloaded successfully";
+
+                // Show success state
+                templateInfoBox.style.color = 'green';
+                templateInfoBox.textContent = "Template downloaded successfully";
             })
             .catch(error => {
-                statusArea.innerHTML = '<div style="color: red;">Template Error: ' + error.message + '</div>';
+                // Show error state
+                templateInfoBox.style.color = 'red';
+                templateInfoBox.textContent = 'Template Error: ' + error.message;
                 alert('Template Error: ' + error.message);
             });
     });
