@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 stepOne.style.display = 'none';
                 dropZone.style.display = 'none';
                 uploadLabel.style.display = 'none';
-                runContainer.style.display = 'block';
+                runContainer.style.display = 'flex';
                 statusArea.innerHTML = '<div style="color: blue;">Ready to run (No input file required).</div>';
             } else {
                 // Default Upload Mode
@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const stopBtn = document.createElement('button');
     stopBtn.id = 'stop-script-btn';
     stopBtn.textContent = 'Stop Process';
-    stopBtn.style.cssText = 'display: none; margin-left:10px; background-color: #ff4444; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold;';
+    stopBtn.style.cssText = 'display: none; background-color: #ff4444; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold;';
     runContainer.appendChild(stopBtn);
 
     stopBtn.addEventListener('click', () => {
@@ -497,6 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 statusArea.innerHTML = '<div style="color: green;">Success! Check downloads.</div>';
                 runBtn.disabled = false;
+                runBtn.innerHTML = '▶ Run Script';
                 stopBtn.style.display = 'none'; // Hide Stop
 
                 // Close SSE
@@ -523,6 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 statusArea.innerHTML = '<div style="color: red;">Execution Failed</div>';
                 runBtn.disabled = false;
+                runBtn.innerHTML = '▶ Run Script';
                 stopBtn.style.display = 'none'; // Hide Stop
                 localStorage.setItem('is_script_running', 'false');
                 return;
@@ -583,7 +585,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Reset UI
                     if (consoleBox) consoleBox.style.display = 'none';
-                    if (runBtn) runBtn.disabled = false;
+                    if (runBtn) {
+                        runBtn.disabled = false;
+                        runBtn.innerHTML = '▶ Run Script';
+                    }
                 }
             })
             .catch(err => {
@@ -641,7 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 currentUploadedFilename = data.filename;
                 statusArea.innerHTML = '<div style="color: green;">Uploaded: ' + file.name + '</div>';
-                runContainer.style.display = 'block';
+                runContainer.style.display = 'flex';
                 // Also update dropzone to show success
                 if (dropText) {
                     dropText.innerHTML = `<strong>${file.name}</strong><p style="color: green;">✅ Uploaded Successfully</p>`;
@@ -680,7 +685,9 @@ document.addEventListener('DOMContentLoaded', () => {
         connLine.className = 'console-line';
         connLine.textContent = '> Connecting to console...';
         consoleContent.appendChild(connLine);
+        consoleContent.appendChild(connLine);
         runBtn.disabled = true;
+        runBtn.innerHTML = '<span class="spinner"></span> Processing...';
         stopBtn.style.display = 'inline-block'; // Show Stop 
         stopBtn.disabled = false;
         stopBtn.textContent = 'Stop Process';
