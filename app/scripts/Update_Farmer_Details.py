@@ -1,8 +1,10 @@
 """
-Updates farmer details (e.g., firstName, email, farmerCode, declaredArea) based on configured keys.
+Updates farmer details (e.g., firstName, email) based on configured keys.
 
 Inputs:
-Excel file with 'farmer_id' and columns matching configured attribute keys.
+Excel file with 'farmer_id'.
+Columns for updates should be named 'value_1', 'value_2', etc., corresponding
+to the order of keys configured in the UI.
 """
 import pandas as pd
 import requests
@@ -103,36 +105,11 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
 
                 # Dynamic Update Logic
                 for key_idx, key_name in valid_keys_map.items():
-                    # Check if column exists in Excel matching the key name
-                    # User instruction implies UI configuration matches Excel columns probably.
-                    # Or we can support "Column 1" mapped to "Key 1".
-                    # Let's assume Excel column name should match the Key Name for simplicity and clarity,
-                    # OR follow the "additional_attribute_{i}" pattern if we want strict index mapping.
-                    # However, "UpdateFarmerName.py" had "first_name".
-                    # "Update_Farmer_Additional_Attribute.py" uses "additional_attribute_{i}".
+                    # Map config key index 0 -> value_1, index 1 -> value_2...
+                    col_name = f"value_{key_idx + 1}"
                     
-                    # Decisions: For "Update_Farmer_Details", let's look for the Key Name directly in Excel columns first.
-                    # If not found, fall back to "Value {i+1}" or similar if we want position based.
-                    # But user said "make this as dynamic as the Update_Farmer_Additional_Attribute.py... logic... config... UI also should be same".
-                    # Update_Farmer_Additional_Attribute.py expects columns "additional_attribute_1", etc.
-                    # BUT for core fields like "firstName", columns usually are named "firstName".
-                    # Let's try to look for the KEY name in columns.
-                    
-                    col_name = key_name # Default expectation
-                    
-                    # If not exact match, maybe case insensitive?
-                    found_col = None
                     if col_name in df.columns:
-                        found_col = col_name
-                    else:
-                        # Case insensitive search
-                        for c in df.columns:
-                            if c.lower() == col_name.lower():
-                                found_col = c
-                                break
-                    
-                    if found_col:
-                        new_value = row[found_col]
+                        new_value = row[col_name]
                         if pd.isna(new_value):
                             new_value = "" # or None? Empty string for text fields usually safe.
                         else:

@@ -2,7 +2,9 @@
 Updates asset details (e.g., name,surveyNumber,leased, etc) based on configured keys.
 
 Inputs:
-Excel file with 'asset_id' and columns matching configured attribute keys.
+Excel file with 'asset_id'.
+Columns for updates should be named 'value_1', 'value_2', etc., corresponding
+to the order of keys configured in the UI.
 """
 import pandas as pd
 import requests
@@ -102,21 +104,10 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
 
                 # Dynamic Update Logic
                 for key_idx, key_name in valid_keys_map.items():
-                    col_name = key_name # Default expectation
+                    col_name = f"value_{key_idx + 1}"
                     
-                    # If not exact match, maybe case insensitive?
-                    found_col = None
                     if col_name in df.columns:
-                        found_col = col_name
-                    else:
-                        # Case insensitive search
-                        for c in df.columns:
-                            if c.lower() == col_name.lower():
-                                found_col = c
-                                break
-                    
-                    if found_col:
-                        new_value = row[found_col]
+                        new_value = row[col_name]
                         if pd.isna(new_value):
                             new_value = ""
                         else:
