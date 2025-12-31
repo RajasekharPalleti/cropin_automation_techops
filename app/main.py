@@ -294,6 +294,16 @@ async def list_scripts():
             "url": "https://cloud.cropin.in/services/user/api/users",
             "label": "Base Api Url",
             "requires_input": True
+        },
+        "Bulk_Delete_Farmers.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/farmers/bulk",
+            "label": "Base Api Url",
+            "requires_input": True
+        },
+        "Bulk_Delete_Assets.py": {
+            "url": "https://cloud.cropin.in/services/farm/api/assets/bulk",
+            "label": "Base Api Url",
+            "requires_input": True
         }
     }
     
