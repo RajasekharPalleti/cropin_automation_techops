@@ -340,6 +340,18 @@ SCRIPT_CONFIGS = {
         "show_threading": True,
         "show_batch_config": True
     },
+    "Convert_GeoJSON_to_Excel.py": {
+        "base_api_url": "N/A",
+        "label": "N/A",
+        "requires_input": True,
+        "hide_auth": True,
+    },
+    "Create_Farmer_Asset_and_CA.py": {
+        "base_api_url": "https://cloud.cropin.in/services/farm/api/composite/dashboard",
+        "label": "Api Url",
+        "requires_input": True,
+        "show_threading": True,
+    },
 }
 
 # Fallback config used when a script is not listed in SCRIPT_CONFIGS above.

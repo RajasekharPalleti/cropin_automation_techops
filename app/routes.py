@@ -451,7 +451,9 @@ async def list_scripts():
                 "show_batch_config": config.get("show_batch_config", False),
                 "unlimited_batch_size": config.get("unlimited_batch_size", False),
                 "show_time_delay": config.get("show_time_delay", True),
-                "show_valid_types": config.get("show_valid_types", False)
+                "show_valid_types": config.get("show_valid_types", False),
+                "hide_auth": config.get("hide_auth", False),
+                "hide_template": config.get("hide_template", False)
             })
 
     scripts.sort(key=lambda x: x["name"])

@@ -83,8 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedScriptName = scriptSelect?.value;
             const selectedScriptData = (window.scriptsData || []).find(s => s.name === selectedScriptName);
             if (!selectedScriptData?.unlimited_batch_size) {
-                 let val = parseInt(this.value);
-                 if (isNaN(val) || val < 1) { this.value = 100; }
+                let val = parseInt(this.value);
+                if (isNaN(val) || val < 1) { this.value = 100; }
             }
         });
     }
@@ -144,6 +144,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // AUTH VALIDATION
     // ================================================================
     function checkAuthAndAlert() {
+        const selectedScriptName = scriptSelect?.value;
+        const selectedScript = scriptsData?.find(s => s.name === selectedScriptName);
+        if (selectedScript && selectedScript.hide_auth) {
+            return true;
+        }
         const missing = [];
         if (!tenantIn.value.trim()) missing.push('Tenant Name');
         if (!userIn.value.trim()) missing.push('Username');
@@ -164,18 +169,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Returns { favorites, others } — both arrays sorted A→Z. */
     function sortByFavorites(list) {
-        const favorites = list.filter(s =>  favoriteScripts.includes(s.name))
-                              .sort((a, b) => a.name.localeCompare(b.name));
-        const others    = list.filter(s => !favoriteScripts.includes(s.name))
-                              .sort((a, b) => a.name.localeCompare(b.name));
+        const favorites = list.filter(s => favoriteScripts.includes(s.name))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        const others = list.filter(s => !favoriteScripts.includes(s.name))
+            .sort((a, b) => a.name.localeCompare(b.name));
         return { favorites, others };
     }
 
     /** Builds one <li> (name + star) and appends it to container. */
     function renderListItem(container, scriptObj, isFavorite) {
         const scriptName = scriptObj.name;
-        let displayName  = scriptName.replace('.py', '').replace(/_/g, ' ');
-        displayName      = displayName.replace(/([a-z])([A-Z])/g, '$1 $2');
+        let displayName = scriptName.replace('.py', '').replace(/_/g, ' ');
+        displayName = displayName.replace(/([a-z])([A-Z])/g, '$1 $2');
 
         const li = document.createElement('li');
         li.dataset.value = scriptName;
@@ -187,8 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const star = document.createElement('span');
         star.className = 'star-icon' + (isFavorite ? ' active' : '');
-        star.innerHTML  = isFavorite ? '★' : '☆';
-        star.title      = isFavorite ? 'Remove from favorites' : 'Add to favorites';
+        star.innerHTML = isFavorite ? '★' : '☆';
+        star.title = isFavorite ? 'Remove from favorites' : 'Add to favorites';
         star.addEventListener('click', (e) => toggleFavorite(scriptName, e));
         li.appendChild(star);
 
@@ -204,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const { displayName } = renderListItem(container, scriptObj, isFavorite);
             if (selectEl) {
                 const option = document.createElement('option');
-                option.value       = scriptObj.name;
+                option.value = scriptObj.name;
                 option.textContent = (isFavorite ? '⭐ ' : '') + displayName;
                 selectEl.appendChild(option);
             }
@@ -248,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-upload');
         const dropText = dropZone?.querySelector('.drop-text');
-        if (dropText) dropText.innerHTML = '<strong>Drag and drop file here</strong><p>Limit 200MB per file • XLSX</p>';
+        if (dropText) dropText.innerHTML = '<strong>Drag and drop file here</strong><p>Limit 200MB per file • XLSX, GEOJSON</p>';
         if (fileInput) fileInput.value = '';
 
         document.getElementById('config-placeholder').style.display = 'none';
@@ -274,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const toggle = (id, show) => { const el = document.getElementById(id); if (el) el.style.display = show ? 'block' : 'none'; };
-            
+
             toggle('google-api-config', selectedScript.show_google_api_config);
 
             toggle('pr-weather-config', selectedScript.show_pr_weather);
@@ -330,10 +335,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (runContainer) runContainer.style.display = 'flex';
                 if (statusArea) statusArea.innerHTML = '<div style="color: blue;">Ready to run (No input file required).</div>';
             } else {
-                if (stepOne) stepOne.style.display = 'block';
+                if (stepOne) stepOne.style.display = selectedScript.hide_template ? 'none' : 'block';
                 if (dropZoneEl) dropZoneEl.style.display = 'flex';
                 if (uploadLabel) uploadLabel.style.display = 'block';
                 if (runContainer) runContainer.style.display = 'none';
+            }
+
+            const authSection = document.querySelector('.auth-section');
+            if (authSection) {
+                authSection.style.display = selectedScript.hide_auth ? 'none' : 'block';
             }
 
             // Script details panel
@@ -389,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Script matches if EVERY token typed by the user is found in either the name or display name
             return tokens.every(token => searchableText.includes(token));
         });
-        
+
         // Render filtered results using the shared helpers
         dropdownList.innerHTML = '';
         if (filtered.length > 0) {
@@ -569,8 +579,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const confirmedLine = document.createElement('div');
                     confirmedLine.className = 'console-line';
                     confirmedLine.style.color = status.is_stopping ? 'orange' : '#00AA00';
-                    confirmedLine.textContent = status.is_stopping 
-                        ? '> Session confirmed. Script is currently stopping...' 
+                    confirmedLine.textContent = status.is_stopping
+                        ? '> Session confirmed. Script is currently stopping...'
                         : '> Session confirmed. Resuming logs...';
                     if (consoleContent) consoleContent.appendChild(confirmedLine);
 
