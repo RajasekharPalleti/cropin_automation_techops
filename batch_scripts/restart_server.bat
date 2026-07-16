@@ -38,6 +38,14 @@ timeout /t 2 >nul
 echo Starting Server...
 echo Open http://localhost:4444 or http://<your-ip>:4444 in your browser.
 pushd %~dp0\..\
+
+echo Activating virtual environment...
+if not exist .venv (
+    echo Creating new virtual environment...
+    python -m venv .venv
+)
+call .venv\Scripts\activate
+
 echo Installing/Updating requirements...
 pip install -r requirements.txt
 python -m app.main
