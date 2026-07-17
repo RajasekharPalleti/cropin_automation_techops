@@ -10,6 +10,7 @@ import json
 import re
 import math
 import time
+from typing import Any, cast
 
 def calculate_area_and_center(coords):
     if not coords or len(coords) < 3:
@@ -128,27 +129,28 @@ def run(input_excel, output_excel, config, log_callback=None):
     coord_col = coord_col_names[0] if coord_col_names else df.columns[0] # Default to first if name matching fails
 
     for i, row in df.iterrows():
+        row_num = int(cast(Any, i)) + 2
         try:
             coord_str = row[coord_col]
-            if pd.isna(coord_str) or str(coord_str).strip() == '':
+            if pd.isna(coord_str) is True or str(coord_str).strip() == '':
                 df.at[i, 'Status'] = "Skipped"
                 df.at[i, 'Response'] = "Coordinates are empty"
-                log(f"⏳ Skipping row {i+2} due to missing coordinates.")
+                log(f"⏳ Skipping row {row_num} due to missing coordinates.")
                 continue
                 
-            log(f"⏳ Processing row {i+2}...")
+            log(f"⏳ Processing row {row_num}...")
             
             coords = parse_coordinates(coord_str, coordinate_order)
             if not coords:
                 df.at[i, 'Status'] = "Failed"
                 df.at[i, 'Response'] = "Invalid coordinate format"
-                log(f"❌ Failed to parse coordinates on row {i+2}")
+                log(f"❌ Failed to parse coordinates on row {row_num}")
                 continue
                 
             if len(coords) < 3:
                 df.at[i, 'Status'] = "Failed"
                 df.at[i, 'Response'] = "Need at least 3 points to form a polygon"
-                log(f"❌ Polygon needs at least 3 points on row {i+2}")
+                log(f"❌ Polygon needs at least 3 points on row {row_num}")
                 continue
 
             sqm, acres, hectares, center_lat, center_lon = calculate_area_and_center(coords)
@@ -162,12 +164,12 @@ def run(input_excel, output_excel, config, log_callback=None):
             
             df.at[i, 'Status'] = "Success"
             df.at[i, 'Response'] = "Calculated Area and Center Point"
-            log(f"✅ Row {i+2} processed successfully.")
+            log(f"✅ Row {row_num} processed successfully.")
             
         except Exception as e:
             df.at[i, 'Status'] = "Failed"
             df.at[i, 'Response'] = str(e)
-            log(f"❌ Error processing row {i+2}: {str(e)}")
+            log(f"❌ Error processing row {row_num}: {str(e)}")
             
         time.sleep(delay_time)
 

@@ -3,6 +3,7 @@ uvicorn
 pandas
 openpyxl
 requests
+types-requests
 python-multipart
 aiofiles
 google-api-python-client

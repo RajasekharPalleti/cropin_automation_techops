@@ -82,54 +82,121 @@ def execute_force_restart():
     # 2. Kill ALL old processes (server + ngrok + terminals) BEFORE starting anything new.
     #    This prevents the new CROPIN_SERVER window from being killed by a later taskkill.
     safe_log_print("Killing all old server, ngrok processes and their terminal windows...")
+    is_windows = os.name == 'nt'
     try:
-        # Kill the process listening on port 4444
-        stop_bat = os.path.abspath(os.path.join("batch_scripts", "stop_server.bat"))
-        if os.path.exists(stop_bat):
-            subprocess.call(f'echo. | "{stop_bat}"', shell=True)
-        
-        # Kill ngrok process
-        subprocess.call(["taskkill", "/IM", "ngrok.exe", "/F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        
-        # Kill old CMD windows by title (only OLD ones — new ones haven't been created yet)
-        # We query for PIDs of cmd windows containing any batch script title keywords
-        try:
-            ps_command = (
-                "Get-Process -Name cmd -ErrorAction SilentlyContinue | "
-                "Where-Object { $_.MainWindowTitle -like '*cropin*' -or "
-                "$_.MainWindowTitle -like '*restart_server*' -or "
-                "$_.MainWindowTitle -like '*restart_ngrok*' -or "
-                "$_.MainWindowTitle -like '*stop_server*' -or "
-                "$_.MainWindowTitle -like '*stop_ngrok*' } | "
-                "Select-Object -ExpandProperty Id"
-            )
-            output = subprocess.check_output(["powershell", "-Command", ps_command]).decode("utf-8").strip()
-            if output:
-                pids = [p.strip() for p in output.split("\n") if p.strip()]
-                for pid in pids:
-                    if pid:
-                        subprocess.call(["taskkill", "/F", "/PID", pid, "/T"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception as ps_err:
-            safe_log_print(f"PowerShell cleanup warning: {ps_err}. Falling back to standard taskkill...")
-            # Fallback
-            subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq CROPIN_SERVER*',  '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq CROPIN_NGROK*',   '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq RESTART_SERVER*', '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq RESTART_NGROK*',  '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq STOP_SERVER*',    '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq STOP_NGROK*',     '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        
-        # Kill any old auto_update.py background process to hand over the baton
-        current_pid = os.getpid()
-        try:
-            ps_update_cmd = (
-                f"Get-CimInstance Win32_Process -Filter \"Name = 'python.exe' and CommandLine like '%auto_update.py%'\" | "
-                f"Where-Object {{ $_.ProcessId -ne {current_pid} }} | "
-                f"Invoke-CimMethod -MethodName Terminate"
-            )
-            subprocess.call(["powershell", "-Command", ps_update_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception:
-            subprocess.call('wmic process where "commandline like \'%auto_update.py%\' and processid != ' + str(current_pid) + '" delete', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if is_windows:
+            # Kill the process listening on port 4444
+            stop_bat = os.path.abspath(os.path.join("batch_scripts", "stop_server.bat"))
+            if os.path.exists(stop_bat):
+                subprocess.call(f'echo. | "{stop_bat}"', shell=True)
+            
+            # Kill ngrok process
+            subprocess.call(["taskkill", "/IM", "ngrok.exe", "/F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            # Kill old CMD windows by title (only OLD ones — new ones haven't been created yet)
+            # We query for PIDs of cmd windows containing any batch script title keywords
+            try:
+                ps_command = (
+                    "Get-Process -Name cmd -ErrorAction SilentlyContinue | "
+                    "Where-Object { $_.MainWindowTitle -like '*cropin*' -or "
+                    "$_.MainWindowTitle -like '*restart_server*' -or "
+                    "$_.MainWindowTitle -like '*restart_ngrok*' -or "
+                    "$_.MainWindowTitle -like '*stop_server*' -or "
+                    "$_.MainWindowTitle -like '*stop_ngrok*' } | "
+                    "Select-Object -ExpandProperty Id; exit 0"
+                )
+                output = subprocess.check_output(["powershell", "-Command", ps_command]).decode("utf-8").strip()
+                if output:
+                    pids = [p.strip() for p in output.split("\n") if p.strip()]
+                    for pid in pids:
+                        if pid:
+                            subprocess.call(["taskkill", "/F", "/PID", pid, "/T"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception as ps_err:
+                # If it's a CalledProcessError with return code 1, it just means no processes matched the query
+                if not (isinstance(ps_err, subprocess.CalledProcessError) and ps_err.returncode == 1):
+                    safe_log_print(f"PowerShell cleanup warning: {ps_err}. Falling back to standard taskkill...")
+                # Fallback
+                subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq CROPIN_SERVER*',  '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq CROPIN_NGROK*',   '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq RESTART_SERVER*', '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq RESTART_NGROK*',  '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq STOP_SERVER*',    '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.call(['taskkill', '/F', '/FI', 'WINDOWTITLE eq STOP_NGROK*',     '/T'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            # Kill any old auto_update.py background process to hand over the baton
+            current_pid = os.getpid()
+            try:
+                ps_update_cmd = (
+                    f"Get-CimInstance Win32_Process -Filter \"Name = 'python.exe' and CommandLine like '%auto_update.py%'\" | "
+                    f"Where-Object {{ $_.ProcessId -ne {current_pid} }} | "
+                    f"Invoke-CimMethod -MethodName Terminate"
+                )
+                subprocess.call(["powershell", "-Command", ps_update_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception:
+                subprocess.call('wmic process where "commandline like \'%auto_update.py%\' and processid != ' + str(current_pid) + '" delete', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            # Unix (macOS / Linux) logic
+            import signal
+            
+            # 1. Close old Terminal windows by name on macOS
+            if sys.platform == 'darwin':
+                try:
+                    applescript_close = (
+                        'tell application "Terminal" to close '
+                        '(every window whose name contains "CROPIN_SERVER" or '
+                        'name contains "CROPIN_NGROK" or '
+                        'name contains "RESTART_SERVER" or '
+                        'name contains "RESTART_NGROK" or '
+                        'name contains "STOP_SERVER" or '
+                        'name contains "STOP_NGROK")'
+                    )
+                    subprocess.call(["osascript", "-e", applescript_close], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                except Exception:
+                    pass
+
+            # 2. Kill process listening on port 4444
+            try:
+                pid_bytes = subprocess.check_output(["lsof", "-ti", "4444"])
+                pids = pid_bytes.decode("utf-8").strip().split()
+                for pid_str in pids:
+                    pid = int(pid_str)
+                    os.kill(pid, signal.SIGKILL)
+                    safe_log_print(f"Killed process {pid} listening on port 4444")
+            except Exception:
+                pass
+            
+            # 3. Kill ngrok
+            try:
+                subprocess.call(["pkill", "-f", "ngrok"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception:
+                try:
+                    subprocess.call(["killall", "ngrok"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                except Exception:
+                    pass
+            
+            # 4. Kill old python instances running main, auto_update, and force_restart
+            current_pid = os.getpid()
+            try:
+                output = subprocess.check_output(["ps", "-eo", "pid,command"]).decode("utf-8")
+                for line in output.splitlines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    parts = line.split(None, 1)
+                    if len(parts) < 2:
+                        continue
+                    pid_str, cmd = parts
+                    try:
+                        pid = int(pid_str)
+                        if pid == current_pid:
+                            continue
+                        if "python" in cmd.lower() and ("app.main" in cmd or "auto_update.py" in cmd or "force_restart.py" in cmd):
+                            os.kill(pid, signal.SIGKILL)
+                            safe_log_print(f"Killed old update/server process: PID {pid} ({cmd})")
+                    except (ValueError, OSError):
+                        pass
+            except Exception as e:
+                safe_log_print(f"Error cleaning up Unix processes: {e}")
         
         safe_log_print("All old server/ngrok processes and terminal windows killed.")
     except Exception as e:
@@ -139,17 +206,46 @@ def execute_force_restart():
     safe_log_print("Waiting for OS to release port 4444...")
     time.sleep(5)
 
-    # 4. Start the new Server in a NEW visible terminal
-    safe_log_print("Starting Server in NEW visible terminal...")
-    try:
+    # 4. Start the new Server
+    if is_windows:
+        safe_log_print("Starting Server in NEW visible terminal...")
+        try:
+            start_bat = os.path.abspath(os.path.join("batch_scripts", "run_server.bat"))
+            if os.path.exists(start_bat):
+                # 0x00000010 is subprocess.CREATE_NEW_CONSOLE on Windows
+                subprocess.Popen(f'"{start_bat}" --no-pause', shell=True, creationflags=0x00000010)
+                safe_log_print("run_server.bat launched in new window.")
+            else:
+                safe_log_print(f"ERROR: Could not find {start_bat}")
+        except Exception as e:
+            safe_log_print(f"ERROR starting Server: {e}")
+    else:
+        # Start Server on macOS / Unix
         start_bat = os.path.abspath(os.path.join("batch_scripts", "run_server.bat"))
-        if os.path.exists(start_bat):
-            subprocess.Popen(f'"{start_bat}" --no-pause', shell=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
-            safe_log_print("run_server.bat launched in new window.")
-        else:
-            safe_log_print(f"ERROR: Could not find {start_bat}")
-    except Exception as e:
-        safe_log_print(f"ERROR starting Server: {e}")
+        launched_visually = False
+        
+        if sys.platform == 'darwin':
+            safe_log_print("Starting Server in NEW macOS Terminal window...")
+            try:
+                project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+                command_str = f"cd '{project_dir}' && bash '{start_bat}' --no-pause"
+                applescript = f'tell application "Terminal" to do script "{command_str}"'
+                subprocess.Popen(["osascript", "-e", applescript], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                launched_visually = True
+                safe_log_print("run_server.bat launched in new macOS Terminal window.")
+            except Exception as os_err:
+                safe_log_print(f"macOS Terminal launch failed ({os_err}), falling back to background session.")
+                
+        if not launched_visually:
+            safe_log_print("Starting Server in background session...")
+            try:
+                if os.path.exists(start_bat):
+                    subprocess.Popen(["bash", start_bat], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    safe_log_print("run_server.bat launched successfully in background session.")
+                else:
+                    safe_log_print(f"ERROR: Could not find {start_bat}")
+            except Exception as e:
+                safe_log_print(f"ERROR starting Server: {e}")
 
     # 5. CRITICAL: Wait until the server is actually listening on port 4444
     #    before starting ngrok. This is what caused ERR_NGROK_8012 before —
@@ -157,16 +253,45 @@ def execute_force_restart():
     wait_for_server(port=SERVER_PORT, timeout=SERVER_STARTUP_TIMEOUT)
 
     # 6. Start Ngrok ONLY AFTER the server is confirmed up
-    safe_log_print("Starting Ngrok in NEW visible terminal...")
-    try:
+    if is_windows:
+        safe_log_print("Starting Ngrok in NEW visible terminal...")
+        try:
+            ngrok_bat = os.path.abspath(os.path.join("batch_scripts", "run_ngrok.bat"))
+            if os.path.exists(ngrok_bat):
+                # 0x00000010 is subprocess.CREATE_NEW_CONSOLE on Windows
+                subprocess.Popen(f'"{ngrok_bat}" --no-pause', shell=True, creationflags=0x00000010)
+                safe_log_print("Ngrok restarted in new window.")
+            else:
+                safe_log_print(f"ERROR: Could not find {ngrok_bat}")
+        except Exception as e:
+            safe_log_print(f"ERROR restarting Ngrok: {e}")
+    else:
+        # Start Ngrok on macOS / Unix
         ngrok_bat = os.path.abspath(os.path.join("batch_scripts", "run_ngrok.bat"))
-        if os.path.exists(ngrok_bat):
-            subprocess.Popen(f'"{ngrok_bat}" --no-pause', shell=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
-            safe_log_print("Ngrok restarted in new window.")
-        else:
-            safe_log_print(f"ERROR: Could not find {ngrok_bat}")
-    except Exception as e:
-        safe_log_print(f"ERROR restarting Ngrok: {e}")
+        launched_visually = False
+        
+        if sys.platform == 'darwin':
+            safe_log_print("Starting Ngrok in NEW macOS Terminal window...")
+            try:
+                project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+                command_str = f"cd '{project_dir}' && bash '{ngrok_bat}' --no-pause"
+                applescript = f'tell application "Terminal" to do script "{command_str}"'
+                subprocess.Popen(["osascript", "-e", applescript], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                launched_visually = True
+                safe_log_print("Ngrok restarted in new macOS Terminal window.")
+            except Exception as os_err:
+                safe_log_print(f"macOS Ngrok Terminal launch failed ({os_err}), falling back to background session.")
+                
+        if not launched_visually:
+            safe_log_print("Starting Ngrok in background session...")
+            try:
+                if os.path.exists(ngrok_bat):
+                    subprocess.Popen(["bash", ngrok_bat], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    safe_log_print("Ngrok restarted successfully in background session.")
+                else:
+                    safe_log_print(f"ERROR: Could not find {ngrok_bat}")
+            except Exception as e:
+                safe_log_print(f"ERROR restarting Ngrok: {e}")
         
     safe_log_print("Force Restart Process Finished. Baton handed over to new instance.")
     safe_log_print("--------------------------------------------------")

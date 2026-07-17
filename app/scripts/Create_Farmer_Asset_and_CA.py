@@ -143,6 +143,7 @@ def run(input_excel, output_excel, config, log_callback=None):
 
     def process_row(index, row):
         nonlocal processed_count
+        status_msg = "Skipped"
         try:
             # Basic validation check for mandatory fields
             for col in required_cols:
@@ -242,21 +243,30 @@ def run(input_excel, output_excel, config, log_callback=None):
             response = requests.post(api_url, headers=headers, json=payload)
             
             if response.status_code in (200, 201):
-                # thread_safe_log(f"✅ Success for farmer: {row['firstName']}")
+                status_msg = "Success"
                 return index, "Success", response.text
             else:
-                # thread_safe_log(f"❌ Failed for farmer: {row['firstName']} | Status: {response.status_code}")
+                status_msg = f"Failed ({response.status_code})"
                 return index, f"Failed ({response.status_code})", response.text
 
         except requests.exceptions.RequestException as e:
+            status_msg = "Failed: Connection Error"
             return index, "Failed: Connection Error", str(e)
         except Exception as e:
+            status_msg = f"Error: {str(e)}"
             return index, f"Error: {str(e)}", ""
         finally:
             with processed_lock:
                 processed_count += 1
                 pending_rows = total_rows - processed_count
-                thread_safe_log(f"🔄 Processed: {processed_count}/{total_rows} | Pending: {pending_rows} | Farmer: {row['firstName']}")
+                if "Success" in status_msg:
+                    log_icon = "✅"
+                elif "Skipped" in status_msg:
+                    log_icon = "⚠️"
+                else:
+                    log_icon = "❌"
+                farmer_name = clean_str(row.get("firstName")) or f"Row {index+1}"
+                thread_safe_log(f"{log_icon} {status_msg} ({processed_count}/{total_rows}) | Pending: {pending_rows} | Farmer: {farmer_name}")
             time.sleep(delay_time)
 
     # Use ThreadPoolExecutor to run tasks concurrently

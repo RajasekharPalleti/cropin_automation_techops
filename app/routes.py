@@ -35,7 +35,7 @@ router = APIRouter()
 async def process_background_script(
     script_path: str,
     script_name: str,
-    input_path: str,
+    input_path: str | None,
     output_path: str,
     output_filename: str,
     config_dict: dict,
@@ -76,6 +76,8 @@ async def process_background_script(
 
         # --- Load and run the script module dynamically ---
         spec = importlib.util.spec_from_file_location("module.name", script_path)
+        if spec is None or spec.loader is None:
+            raise Exception(f"Could not load script specification or loader for: {script_path}")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
@@ -360,12 +362,20 @@ async def force_restart_server():
     try:
         # Use Popen to launch it independently
         # We use sys.executable to ensure we use the same python interpreter/venv
-        # creationflags=subprocess.CREATE_NEW_CONSOLE ensures it lives after this process dies
-        subprocess.Popen(
-            [sys.executable, "force_restart.py"],
-            shell=False,
-            creationflags=subprocess.CREATE_NEW_CONSOLE
-        )
+        is_windows = os.name == 'nt'
+        if is_windows:
+            # 0x00000010 is subprocess.CREATE_NEW_CONSOLE on Windows
+            subprocess.Popen(
+                [sys.executable, "force_restart.py"],
+                shell=False,
+                creationflags=0x00000010
+            )
+        else:
+            subprocess.Popen(
+                [sys.executable, "force_restart.py"],
+                shell=False,
+                start_new_session=True
+            )
         return {"status": "success", "message": "Force restart sequence initiated. Server will reboot in ~10 seconds."}
     except Exception as e:
         print(f"Error triggering force_restart.py: {e}")
@@ -510,7 +520,7 @@ async def download_result(filename: str):
 # ---------------------------------------------------------------------------
 
 @router.get("/api/backups")
-async def get_backups(page_size: int = 100, page_token: str = None):
+async def get_backups(page_size: int = 100, page_token: str | None = None):
     """List backed-up files from Google Drive."""
     return backup_manager.list_files(page_size=page_size, page_token=page_token)
 

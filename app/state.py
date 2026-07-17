@@ -7,7 +7,7 @@ singleton instances used by both main.py (lifespan) and routes.py (endpoints).
 
 import asyncio
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from app.core.backup_manager import BackupManager
 from app.script_configs import SSE_HEARTBEAT_TIMEOUT
@@ -53,7 +53,7 @@ class ConnectionManager:
     # Lock / unlock helpers
     # ------------------------------------------------------------------
 
-    def mark_active(self, client_id: str, machine_key: str, script_name: str = None):
+    def mark_active(self, client_id: str, machine_key: Optional[str], script_name: Optional[str] = None):
         self.active_tasks.add(client_id)
         if script_name:
             self.client_script_map[client_id] = script_name
@@ -115,7 +115,7 @@ class ConnectionManager:
     # SSE connection helpers
     # ------------------------------------------------------------------
 
-    async def connect(self, client_id: str, last_event_id: str = None):
+    async def connect(self, client_id: str, last_event_id: Optional[str] = None):
         """Register (or re-register) a client's SSE queue and replay history."""
         if client_id in self.active_connections:
             print(f"DEBUG: Client {client_id} reconnecting. Replacing old connection queue.")
@@ -181,6 +181,7 @@ class ConnectionManager:
 
     async def stream_logs(self, client_id: str):
         """Generator that yields SSE-formatted messages for a client."""
+        current_queue = None
         try:
             if client_id not in self.active_connections:
                 return
@@ -211,7 +212,7 @@ class ConnectionManager:
                     yield ": keepalive\n\n"
 
         except asyncio.CancelledError:
-            if self.active_connections.get(client_id) is current_queue:
+            if current_queue is not None and self.active_connections.get(client_id) is current_queue:
                 self.disconnect(client_id)
             print(f"Stream cancelled for {client_id}")
 
