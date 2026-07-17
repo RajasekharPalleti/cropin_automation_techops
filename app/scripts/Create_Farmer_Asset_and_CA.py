@@ -79,13 +79,10 @@ def run(input_excel, output_excel, config, log_callback=None):
         return
 
     # Ensure output columns exist and are explicitly cast to string to avoid TypeError
-    if "Status" not in df.columns:
-        df["Status"] = ""
-    df["Status"] = df["Status"].fillna("").astype(str)
-
-    if "Response" not in df.columns:
-        df["Response"] = ""
-    df["Response"] = df["Response"].fillna("").astype(str)
+    for col in ["Status", "Response", "croppableAreaId"]:
+        if col not in df.columns:
+            df[col] = ""
+        df[col] = df[col].fillna("").astype(str)
 
     # Validate required columns
     required_cols = [
@@ -149,7 +146,7 @@ def run(input_excel, output_excel, config, log_callback=None):
             for col in required_cols:
                 if pd.isna(row[col]) or str(row[col]).strip() == "":
                     thread_safe_log(f"⚠️ Row {index+1} skipped due to missing mandatory column '{col}'")
-                    return index, f"Skipped: Missing mandatory column {col}", ""
+                    return index, f"Skipped: Missing mandatory column {col}", "", ""
 
             # Parse userIds
             user_ids_val = row.get("userIds")
@@ -244,17 +241,26 @@ def run(input_excel, output_excel, config, log_callback=None):
             
             if response.status_code in (200, 201):
                 status_msg = "Success"
-                return index, "Success", response.text
+                croppable_area_id = ""
+                try:
+                    res_json = response.json()
+                    if isinstance(res_json, dict):
+                        ca_obj = res_json.get("croppableArea")
+                        if isinstance(ca_obj, dict):
+                            croppable_area_id = str(ca_obj.get("id", ""))
+                except Exception:
+                    pass
+                return index, "Success", response.text, croppable_area_id
             else:
                 status_msg = f"Failed ({response.status_code})"
-                return index, f"Failed ({response.status_code})", response.text
+                return index, f"Failed ({response.status_code})", response.text, ""
 
         except requests.exceptions.RequestException as e:
             status_msg = "Failed: Connection Error"
-            return index, "Failed: Connection Error", str(e)
+            return index, "Failed: Connection Error", str(e), ""
         except Exception as e:
             status_msg = f"Error: {str(e)}"
-            return index, f"Error: {str(e)}", ""
+            return index, f"Error: {str(e)}", "", ""
         finally:
             with processed_lock:
                 processed_count += 1
@@ -274,9 +280,10 @@ def run(input_excel, output_excel, config, log_callback=None):
         futures = {executor.submit(process_row, index, row): index for index, row in df.iterrows()}
         
         for future in concurrent.futures.as_completed(futures):
-            processed_index, status, response = future.result()
+            processed_index, status, response, croppable_area_id = future.result()
             df.at[processed_index, "Status"] = status
             df.at[processed_index, "Response"] = response
+            df.at[processed_index, "croppableAreaId"] = croppable_area_id
 
     # Save output
     try:
