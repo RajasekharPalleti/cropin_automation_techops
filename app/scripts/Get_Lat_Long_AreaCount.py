@@ -50,12 +50,26 @@ def parse_coordinates(coord_str, coordinate_order="Long, Lat"):
     try:
         # First try JSON [ [lon, lat], [lon, lat]... ]
         coords = json.loads(str(coord_str).replace("'", '"'))
-        if isinstance(coords, list) and len(coords) > 0 and isinstance(coords[0], list):
-            # For JSON, we respect the standard [Long, Lat] usually, 
-            # but if user specifically says "Lat, Long", we swap it.
-            if coordinate_order == "Lat, Long":
-                return [[c[1], c[0]] for c in coords]
-            return coords
+        if isinstance(coords, str):
+            coords = json.loads(coords.replace("'", '"'))
+            
+        if isinstance(coords, list) and len(coords) > 0:
+            # Drill down if there are extra nested lists (e.g. 3 brackets like [[[lon, lat], ...]] or MultiPolygon)
+            while isinstance(coords, list) and len(coords) > 0 and isinstance(coords[0], list):
+                if len(coords[0]) > 0 and not isinstance(coords[0][0], list):
+                    break
+                coords = coords[0]
+            
+            # Ensure elements of coords are converted to float
+            cleaned_coords = []
+            for c in coords:
+                if isinstance(c, list) and len(c) >= 2:
+                    cleaned_coords.append([float(c[0]), float(c[1])])
+            
+            if len(cleaned_coords) > 0:
+                if coordinate_order == "Lat, Long":
+                    return [[c[1], c[0]] for c in cleaned_coords]
+                return cleaned_coords
     except Exception:
         pass
     
