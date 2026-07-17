@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const openScheduleModalBtn = document.getElementById('open-schedule-modal-btn');
 
     function checkScheduleEligibility() {
-        const tenant = document.getElementById('tenant')?.value;
+        const tenant = document.getElementById('tenant-code')?.value;
         const username = document.getElementById('username')?.value;
         const password = document.getElementById('password')?.value;
         const scriptSelected = document.getElementById('script-select')?.value;

@@ -172,6 +172,8 @@ async def process_scheduled_script(job_id: str, job_data: dict):
             raise Exception(f"Script {script_name} not found.")
 
         spec = importlib.util.spec_from_file_location("module.name", script_path)
+        if spec is None or spec.loader is None:
+            raise Exception(f"Failed to load spec or loader for {script_name}")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
