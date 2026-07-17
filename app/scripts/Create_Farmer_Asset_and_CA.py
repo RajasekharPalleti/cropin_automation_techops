@@ -191,6 +191,10 @@ def run(input_excel, output_excel, config, log_callback=None):
             irrigation_type_id = clean_int(row.get("irrigationTypeId"), default="")
             irrigation_type = {"id": irrigation_type_id}
 
+            # Parse declared area with minimum guard of 0.1
+            declared_area_val = clean_float(row["declaredAreaCount"])
+            declared_area_count = 0.1 if (not isinstance(declared_area_val, float) or declared_area_val < 0.1) else declared_area_val
+
             # Construct the payload
             payload = {
                 "projectId": clean_int(row["projectId"]),
@@ -223,7 +227,7 @@ def run(input_excel, output_excel, config, log_callback=None):
                     "declaredArea": {
                         "enableConversion": "true",
                         "unit": clean_str(row["declaredAreaUnit"]),
-                        "count": clean_float(row["declaredAreaCount"])
+                        "count": declared_area_count
                     },
                     "auditedArea": {
                         "enableConversion": "true",
