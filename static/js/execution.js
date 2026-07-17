@@ -1084,26 +1084,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Enable buttons independently when a manual ID is typed
-    deforestManualTemplateId.addEventListener('input', () => {
-        if (deforestManualTemplateId.value.trim()) deforestDlBtn.disabled = false;
+    deforestManualTemplateId?.addEventListener('input', () => {
+        if (deforestManualTemplateId.value.trim() && deforestDlBtn) deforestDlBtn.disabled = false;
     });
-    deforestManualUploadIdProcess.addEventListener('input', () => {
-        if (deforestManualUploadIdProcess.value.trim()) deforestProcessBtn.disabled = false;
+    deforestManualUploadIdProcess?.addEventListener('input', () => {
+        if (deforestManualUploadIdProcess.value.trim() && deforestProcessBtn) deforestProcessBtn.disabled = false;
     });
-    deforestManualUploadIdStatus.addEventListener('input', () => {
-        if (deforestManualUploadIdStatus.value.trim()) deforestStatusBtn.disabled = false;
+    deforestManualUploadIdStatus?.addEventListener('input', () => {
+        if (deforestManualUploadIdStatus.value.trim() && deforestStatusBtn) deforestStatusBtn.disabled = false;
     });
-    deforestManualUploadIdFallback.addEventListener('input', () => {
-        if (deforestManualUploadIdFallback.value.trim()) deforestFallbackBtn.disabled = false;
+    deforestManualUploadIdFallback?.addEventListener('input', () => {
+        if (deforestManualUploadIdFallback.value.trim() && deforestFallbackBtn) deforestFallbackBtn.disabled = false;
     });
 
-    deforestBtn.addEventListener('click', () => {
+    deforestBtn?.addEventListener('click', () => {
         resetDeforestModal();
-        deforestModal.style.display = 'block';
+        if (deforestModal) deforestModal.style.display = 'block';
     });
 
-    deforestClose.addEventListener('click', () => {
-        deforestModal.style.display = 'none';
+    deforestClose?.addEventListener('click', () => {
+        if (deforestModal) deforestModal.style.display = 'none';
     });
 
     // Screen 1 → Auth API → Screen 2
@@ -1113,11 +1113,11 @@ document.addEventListener('DOMContentLoaded', () => {
         PROD: { base: 'https://sso.sg.cropin.in',            extraParams: {} }
     };
 
-    document.getElementById('deforestation-proceed-btn').addEventListener('click', async () => {
-        const env      = document.getElementById('deforestation-env').value;
-        const tenant   = document.getElementById('deforestation-tenant').value.trim();
-        const username = document.getElementById('deforestation-username').value.trim();
-        const password = document.getElementById('deforestation-password').value.trim();
+    document.getElementById('deforestation-proceed-btn')?.addEventListener('click', async () => {
+        const env      = document.getElementById('deforestation-env')?.value;
+        const tenant   = document.getElementById('deforestation-tenant')?.value.trim();
+        const username = document.getElementById('deforestation-username')?.value.trim();
+        const password = document.getElementById('deforestation-password')?.value.trim();
 
         deforestError1.style.display = 'none';
         if (!tenant || !username || !password) {
@@ -1159,12 +1159,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Screen 2 → Screen 3
-    document.getElementById('deforestation-baseurl-proceed-btn').addEventListener('click', () => {
-        const url = document.getElementById('deforestation-base-url').value.trim().replace(/\/$/, '');
-        deforestError2.style.display = 'none';
+    document.getElementById('deforestation-baseurl-proceed-btn')?.addEventListener('click', () => {
+        const url = document.getElementById('deforestation-base-url')?.value.trim().replace(/\/$/, '');
+        if (deforestError2) deforestError2.style.display = 'none';
         if (!url) {
-            deforestError2.textContent = 'Base URL is required.';
-            deforestError2.style.display = 'block';
+            if (deforestError2) {
+                deforestError2.textContent = 'Base URL is required.';
+                deforestError2.style.display = 'block';
+            }
             return;
         }
         deforestBaseUrl = url;
@@ -1172,7 +1174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Generate Template
-    deforestGenBtn.addEventListener('click', async () => {
+    deforestGenBtn?.addEventListener('click', async () => {
         deforestError3.style.display = 'none';
         deforestGenBtn.disabled = true;
         deforestGenStatus.textContent = 'Generating…';
@@ -1200,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Download Template
-    deforestDlBtn.addEventListener('click', async () => {
+    deforestDlBtn?.addEventListener('click', async () => {
         const templateId   = deforestManualTemplateId.value.trim() || deforestTemplateId;
         const templateName = deforestTemplateName || templateId || 'template';
         deforestError3.style.display = 'none';
@@ -1229,14 +1231,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Sustainability checkbox — toggle required markers on dates
-    document.getElementById('deforestation-sustainability').addEventListener('change', function () {
+    document.getElementById('deforestation-sustainability')?.addEventListener('change', function () {
         const show = this.checked ? 'inline' : 'none';
-        document.getElementById('deforestation-start-required').style.display = show;
-        document.getElementById('deforestation-end-required').style.display   = show;
+        const startReq = document.getElementById('deforestation-start-required');
+        const endReq = document.getElementById('deforestation-end-required');
+        if (startReq) startReq.style.display = show;
+        if (endReq) endReq.style.display = show;
     });
 
     // Upload Template
-    deforestUploadBtn.addEventListener('click', async () => {
+    deforestUploadBtn?.addEventListener('click', async () => {
         const file           = document.getElementById('deforestation-upload-file').files[0];
         const projectId      = document.getElementById('deforestation-project-id').value.trim();
         const startDate      = document.getElementById('deforestation-start-date').value;
@@ -1287,7 +1291,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Process Template
-    deforestProcessBtn.addEventListener('click', async () => {
+    deforestProcessBtn?.addEventListener('click', async () => {
         const uploadId = deforestManualUploadIdProcess.value.trim() || deforestUploadId;
         deforestError3.style.display = 'none';
         if (!uploadId) { deforestError3.textContent = 'No Upload ID available. Run Upload Template or enter one manually.'; deforestError3.style.display = 'block'; return; }
@@ -1311,7 +1315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Upload Template Status
-    deforestStatusBtn.addEventListener('click', async () => {
+    deforestStatusBtn?.addEventListener('click', async () => {
         const uploadId = deforestManualUploadIdStatus.value.trim() || deforestUploadId;
         deforestStatusError.style.display = 'none';
         deforestStatusResponse.style.display = 'none';
@@ -1338,7 +1342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Download Fallback Template
-    deforestFallbackBtn.addEventListener('click', async () => {
+    deforestFallbackBtn?.addEventListener('click', async () => {
         const uploadId = deforestManualUploadIdFallback.value.trim() || deforestUploadId;
         deforestFallbackError.style.display = 'none';
         if (!uploadId) { deforestFallbackError.textContent = 'No Upload ID available. Run Upload Template or enter one manually.'; deforestFallbackError.style.display = 'block'; return; }
@@ -1382,7 +1386,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let deforestPublishStopped = false;
     const deforestPublishStopBtn = document.getElementById('deforestation-publish-stop-btn');
 
-    deforestPublishStopBtn.addEventListener('click', () => {
+    deforestPublishStopBtn?.addEventListener('click', () => {
         deforestPublishStopped = true;
         deforestPublishStopBtn.disabled = true;
     });
@@ -1395,7 +1399,7 @@ document.addEventListener('DOMContentLoaded', () => {
         deforestPublishTerminal.scrollTop = deforestPublishTerminal.scrollHeight;
     }
 
-    deforestPublishFile.addEventListener('change', async (e) => {
+    deforestPublishFile?.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         deforestPublishFilename.textContent = file.name;
@@ -1441,7 +1445,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    deforestPublishBtn.addEventListener('click', async () => {
+    deforestPublishBtn?.addEventListener('click', async () => {
         if (!deforestPublishExcelData || !deforestPublishExcelData.length) return;
         if (!deforestToken || !deforestBaseUrl) {
             publishLog('❌ Missing token or base URL. Please complete authentication first.', '#f44747');
@@ -1515,12 +1519,12 @@ document.addEventListener('DOMContentLoaded', () => {
         caBatchTerminal.scrollTop = caBatchTerminal.scrollHeight;
     }
 
-    caBatchStopBtn.addEventListener('click', () => {
+    caBatchStopBtn?.addEventListener('click', () => {
         caBatchStopped = true;
         caBatchStopBtn.disabled = true;
     });
 
-    caBatchFile.addEventListener('change', async (e) => {
+    caBatchFile?.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         caBatchFilename.textContent = file.name;
@@ -1563,7 +1567,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    caBatchRunBtn.addEventListener('click', async () => {
+    caBatchRunBtn?.addEventListener('click', async () => {
         if (!caBatchIds || !caBatchIds.length) return;
         if (!deforestToken || !deforestBaseUrl) {
             caBatchTerminal.style.display = 'block';
