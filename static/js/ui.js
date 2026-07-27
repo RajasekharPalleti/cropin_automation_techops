@@ -127,8 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mobileMenuToggle) {
         mobileMenuToggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            mainSidebar.classList.toggle('active');
-            if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+            if (window.innerWidth > 1024) {
+                mainSidebar.classList.toggle('collapsed');
+            } else {
+                mainSidebar.classList.toggle('active');
+                if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+            }
         });
     }
 

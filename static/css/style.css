@@ -51,6 +51,13 @@ body {
     /* Handle internal scrolling */
     z-index: 10;
     color: var(--text-color);
+    transition: margin-left 0.3s ease, transform 0.3s ease;
+}
+
+@media (min-width: 1025px) {
+    .sidebar.collapsed {
+        margin-left: -325px;
+    }
 }
 
 .auth-section {
@@ -913,8 +920,9 @@ body {
 }
 
 .menu-toggle-btn {
-    display: none;
-    /* Hide on desktop by default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 5px;
     margin-right: 15px;
     border-radius: 4px;
