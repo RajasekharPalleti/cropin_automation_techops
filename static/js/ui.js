@@ -127,11 +127,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mobileMenuToggle) {
         mobileMenuToggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (window.innerWidth > 1024) {
-                mainSidebar.classList.toggle('collapsed');
+            mainSidebar.classList.toggle('active');
+            if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+        });
+    }
+
+    // =========================================================
+    // DESKTOP SIDEBAR TOGGLE
+    // =========================================================
+    const desktopToggleBtn = document.getElementById('desktop-sidebar-toggle');
+    const desktopToggleIcon = document.getElementById('desktop-toggle-icon');
+
+    if (desktopToggleBtn) {
+        desktopToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mainSidebar.classList.toggle('collapsed');
+            if (mainSidebar.classList.contains('collapsed')) {
+                desktopToggleIcon.textContent = 'chevron_right';
             } else {
-                mainSidebar.classList.toggle('active');
-                if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+                desktopToggleIcon.textContent = 'chevron_left';
             }
         });
     }

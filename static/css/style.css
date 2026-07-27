@@ -58,6 +58,39 @@ body {
     .sidebar.collapsed {
         margin-left: -325px;
     }
+
+    .desktop-toggle-wrapper {
+        display: flex;
+        align-items: center;
+        z-index: 20;
+        position: relative;
+        width: 0;
+        height: 100%;
+        overflow: visible;
+    }
+
+    .desktop-toggle-btn {
+        width: 24px;
+        height: 48px;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 0 8px 8px 0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+    .desktop-toggle-btn:hover {
+        background: var(--primary-hover);
+    }
+}
+
+.desktop-toggle-wrapper {
+    display: none;
 }
 
 .auth-section {
@@ -920,9 +953,8 @@ body {
 }
 
 .menu-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: none;
+    /* Hide on desktop by default */
     padding: 5px;
     margin-right: 15px;
     border-radius: 4px;
