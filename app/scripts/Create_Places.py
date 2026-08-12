@@ -55,21 +55,17 @@ def get_address_data(session: requests.Session, lat: float, lng: float, google_a
 
     params = {
         "latlng": f"{lat},{lng}",
-        "key": google_api_key,
-        "result_type": "street_address|premise|sublocality|locality",
+        "key": google_api_key
+        # Removed 'result_type' filter because rural/farm coordinates often don't have a 
+        # formal 'street_address' or 'locality', which causes ZERO_RESULTS errors.
     }
 
-    resp = session.get("https://maps.googleapis.com/maps/api/geocode/json", params=params, timeout=10)
-    data = resp.json()
+    try:
+        resp = session.get("https://maps.googleapis.com/maps/api/geocode/json", params=params, timeout=10)
+        data = resp.json()
+    except Exception:
+        data = {}
 
-    if data.get("status") != "OK" or not data.get("results"):
-        error_msg = data.get("error_message", "No detailed error message provided by Google.")
-        raise RuntimeError(f"Google API returned {data.get('status')} - {error_msg}")
-
-    result = data["results"][0]
-    formatted_address = result.get("formatted_address", "")
-
-    comps_raw = result.get("address_components", [])
     comps = {
         "country": "",
         "administrativeAreaLevel1": "",
@@ -79,27 +75,38 @@ def get_address_data(session: requests.Session, lat: float, lng: float, google_a
         "sublocalityLevel2": "",
         "postalCode": "",
     }
+    
+    formatted_address = ""
+    place_id = ""
+    glat = lat
+    glng = lng
 
-    for c in comps_raw:
-        t = c.get("types", [])
-        if "country" in t:
-            comps["country"] = c.get("long_name", "")
-        elif "administrative_area_level_1" in t:
-            comps["administrativeAreaLevel1"] = c.get("long_name", "")
-        elif "administrative_area_level_2" in t:
-            comps["administrativeAreaLevel2"] = c.get("long_name", "")
-        elif "locality" in t:
-            comps["locality"] = c.get("long_name", "")
-        elif "sublocality_level_1" in t:
-            comps["sublocalityLevel1"] = c.get("long_name", "")
-        elif "sublocality_level_2" in t:
-            comps["sublocalityLevel2"] = c.get("long_name", "")
-        elif "postal_code" in t:
-            comps["postalCode"] = c.get("long_name", "")
+    if data.get("status") == "OK" and data.get("results"):
+        result = data["results"][0]
+        formatted_address = result.get("formatted_address", "")
+        place_id = result.get("place_id", "")
 
-    geometry = result.get("geometry", {}).get("location", {})
-    glat = geometry.get("lat", lat)
-    glng = geometry.get("lng", lng)
+        comps_raw = result.get("address_components", [])
+        for c in comps_raw:
+            t = c.get("types", [])
+            if "country" in t:
+                comps["country"] = c.get("long_name", "")
+            elif "administrative_area_level_1" in t:
+                comps["administrativeAreaLevel1"] = c.get("long_name", "")
+            elif "administrative_area_level_2" in t:
+                comps["administrativeAreaLevel2"] = c.get("long_name", "")
+            elif "locality" in t:
+                comps["locality"] = c.get("long_name", "")
+            elif "sublocality_level_1" in t:
+                comps["sublocalityLevel1"] = c.get("long_name", "")
+            elif "sublocality_level_2" in t:
+                comps["sublocalityLevel2"] = c.get("long_name", "")
+            elif "postal_code" in t:
+                comps["postalCode"] = c.get("long_name", "")
+
+        geometry = result.get("geometry", {}).get("location", {})
+        glat = geometry.get("lat", lat)
+        glng = geometry.get("lng", lng)
 
     return {
         "country": comps["country"],
@@ -113,7 +120,7 @@ def get_address_data(session: requests.Session, lat: float, lng: float, google_a
         "postalCode": comps["postalCode"],
         "houseNo": "",
         "buildingName": "",
-        "placeId": result.get("place_id", ""),
+        "placeId": place_id,
         "latitude": glat,
         "longitude": glng,
     }
@@ -187,36 +194,49 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
     processed_count = 0
     log(f"Starting place creation for {total_rows} rows...")
     
-    # Identify the tags column (could be "Tags" or "Plot tags" or "Place tags")
+    # Identify the tags column (flexible matching)
     tags_col = None
     for col in df.columns:
-        if str(col).lower().strip() in ["tags", "plot tags", "place tags"]:
+        if "tag" in str(col).lower():
             tags_col = col
             break
+            
+    if tags_col:
+        log(f"Found tags column in Excel: '{tags_col}'")
+    else:
+        log("Warning: No column containing 'tag' found in Excel. Tags will not be created.")
+
+    def clean_val(val):
+        if pd.isna(val):
+            return ""
+        if isinstance(val, float) and val.is_integer():
+            return str(int(val))
+        return str(val).strip()
+
+    def parse_tag(t):
+        t = t.strip()
+        if t.isdigit():
+            return int(t)
+        try:
+            return float(t)
+        except ValueError:
+            return t
 
     for index, row in df.iterrows():
-        place_name = row["Place name"]
-        place_type = row["Place type"]
-        lat = row["Latitude"]
-        lng = row["Longitude"]
+        place_name = clean_val(row.get("Place name"))
+        place_type = clean_val(row.get("Place type"))
+        lat = clean_val(row.get("Latitude"))
+        lng = clean_val(row.get("Longitude"))
         
-        tags_raw = row[tags_col] if tags_col and not pd.isna(row[tags_col]) else ""
-        tags_list = [t.strip() for t in str(tags_raw).split(",")] if str(tags_raw).strip() else []
+        tags_raw = clean_val(row.get(tags_col)) if tags_col else ""
+        tags_list = [parse_tag(t) for t in tags_raw.split(",")] if tags_raw else []
 
         # If required fields are missing/empty, gracefully skip the row
-        if pd.isna(place_name) or str(place_name).strip() == "" or \
-           pd.isna(place_type) or str(place_type).strip() == "" or \
-           pd.isna(lat) or str(lat).strip() == "" or \
-           pd.isna(lng) or str(lng).strip() == "":
+        if not place_name or not place_type or not lat or not lng:
             df.at[index, "Status"] = "Skipped"
             df.at[index, "Failure Reason"] = "Missing required fields"
+            log(f"⏭️  Skipped Row {index + 1}: Missing one or more required fields (Name, Type, Lat, or Lng)")
             continue
-            
-        # Strip any leading/trailing spaces
-        place_name = str(place_name).strip()
-        place_type = str(place_type).strip()
-        lat = str(lat).strip()
-        lng = str(lng).strip()
             
         try:
             lat_f = parse_coordinate(lat)
