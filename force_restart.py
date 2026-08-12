@@ -138,44 +138,24 @@ def execute_force_restart():
             # Unix (macOS / Linux) logic
             import signal
             
-            # 1. Close old Terminal windows by name on macOS
-            if sys.platform == 'darwin':
-                try:
-                    applescript_close = (
-                        'tell application "Terminal" to close '
-                        '(every window whose name contains "CROPIN_SERVER" or '
-                        'name contains "CROPIN_NGROK" or '
-                        'name contains "RESTART_SERVER" or '
-                        'name contains "RESTART_NGROK" or '
-                        'name contains "STOP_SERVER" or '
-                        'name contains "STOP_NGROK")'
-                    )
-                    subprocess.call(["osascript", "-e", applescript_close], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                except Exception:
-                    pass
-
-            # 2. Kill process listening on port 4444
+            # We NO LONGER use AppleScript to close Terminal windows by name
+            # because it indiscriminately closes windows for ALL projects running 
+            # with those titles, which shuts down other environments on the same machine.
+            
+            # 1. Kill process listening on the current server's port
             try:
-                pid_bytes = subprocess.check_output(["lsof", "-ti", "4444"])
+                pid_bytes = subprocess.check_output(["lsof", "-ti", str(SERVER_PORT)])
                 pids = pid_bytes.decode("utf-8").strip().split()
                 for pid_str in pids:
                     pid = int(pid_str)
                     os.kill(pid, signal.SIGKILL)
-                    safe_log_print(f"Killed process {pid} listening on port 4444")
+                    safe_log_print(f"Killed process {pid} listening on port {SERVER_PORT}")
             except Exception:
                 pass
             
-            # 3. Kill ngrok
-            try:
-                subprocess.call(["pkill", "-f", "ngrok"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except Exception:
-                try:
-                    subprocess.call(["killall", "ngrok"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                except Exception:
-                    pass
-            
-            # 4. Kill old python instances running main, auto_update, and force_restart
+            # 2. Safely kill ngrok and python processes spawned from THIS directory ONLY
             current_pid = os.getpid()
+            project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
             try:
                 output = subprocess.check_output(["ps", "-eo", "pid,command"]).decode("utf-8")
                 for line in output.splitlines():
@@ -190,9 +170,30 @@ def execute_force_restart():
                         pid = int(pid_str)
                         if pid == current_pid:
                             continue
-                        if "python" in cmd.lower() and ("app.main" in cmd or "auto_update.py" in cmd or "force_restart.py" in cmd):
-                            os.kill(pid, signal.SIGKILL)
-                            safe_log_print(f"Killed old update/server process: PID {pid} ({cmd})")
+                        
+                        cmd_lower = cmd.lower()
+                        is_target = False
+                        if "python" in cmd_lower and ("app.main" in cmd or "auto_update.py" in cmd or "force_restart.py" in cmd):
+                            is_target = True
+                        elif "ngrok" in cmd_lower:
+                            is_target = True
+                            
+                        if is_target:
+                            # Verify the process belongs to this project's directory
+                            try:
+                                lsof_out = subprocess.check_output(["lsof", "-p", str(pid), "-a", "-d", "cwd", "-Fn"]).decode("utf-8")
+                                is_match = False
+                                for lline in lsof_out.splitlines():
+                                    if lline.startswith("n"):
+                                        cwd = lline[1:]
+                                        if os.path.abspath(cwd) == project_dir:
+                                            is_match = True
+                                            break
+                                if is_match:
+                                    os.kill(pid, signal.SIGKILL)
+                                    safe_log_print(f"Killed old update/server/ngrok process: PID {pid} ({cmd}) in project dir")
+                            except Exception:
+                                pass
                     except (ValueError, OSError):
                         pass
             except Exception as e:

@@ -12,6 +12,42 @@ import time
 import requests
 import json
 import pandas as pd
+import re
+
+def parse_coordinate(coord_str) -> float:
+    """Parses various coordinate formats (DD, DMS, DDM) into decimal degrees."""
+    if pd.isna(coord_str) or str(coord_str).strip() == "":
+        raise ValueError("Coordinate is empty")
+        
+    coord_str = str(coord_str).strip().upper()
+    
+    # Replace comma with period for decimals
+    coord_str = coord_str.replace(',', '.')
+    
+    # Replace common typography to spaces for easier splitting
+    clean_str = coord_str.replace("''", '"').replace('′', "'").replace('″', '"').replace('°', ' ')
+    
+    # Check for direction (O stands for Oeste / West in Spanish)
+    direction_multiplier = 1
+    if 'S' in clean_str or 'W' in clean_str or 'O' in clean_str:
+        direction_multiplier = -1
+    elif clean_str.startswith('-') and 'S' not in clean_str and 'W' not in clean_str and 'O' not in clean_str:
+        direction_multiplier = -1
+        
+    # Extract numbers
+    parts = re.findall(r"[\d\.]+", clean_str)
+    if not parts:
+        raise ValueError(f"No numbers found in {coord_str}")
+        
+    nums = [float(p) for p in parts]
+    
+    dd = nums[0]
+    if len(nums) > 1:
+        dd += nums[1] / 60.0
+    if len(nums) > 2:
+        dd += nums[2] / 3600.0
+        
+    return dd * direction_multiplier
 
 def get_address_data(session: requests.Session, lat: float, lng: float, google_api_key: str) -> dict:
     if not google_api_key:
@@ -83,15 +119,22 @@ def get_address_data(session: requests.Session, lat: float, lng: float, google_a
     }
 
 
-def build_payload(place_name: str, place_type: str, address_data: dict) -> dict:
-    return {
-        "data": None,
+def build_payload(place_name: str, place_type: str, address_data: dict, tags: list) -> dict:
+    payload = {
         "name": place_name,
         "type": place_type,
         "address": address_data,
         "latitude": address_data["latitude"],
         "longitude": address_data["longitude"],
     }
+    
+    # Only attach tags if they are actually provided
+    if tags:
+        payload["data"] = {"tags": tags}
+    else:
+        payload["data"] = None
+        
+    return payload
 
 
 def run(input_excel_file, output_excel_file, config, log_callback=None):
@@ -143,24 +186,38 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
     total_rows = len(df)
     processed_count = 0
     log(f"Starting place creation for {total_rows} rows...")
+    
+    # Identify the tags column (could be "Tags" or "Plot tags" or "Place tags")
+    tags_col = None
+    for col in df.columns:
+        if str(col).lower().strip() in ["tags", "plot tags", "place tags"]:
+            tags_col = col
+            break
 
     for index, row in df.iterrows():
         place_name = row["Place name"]
         place_type = row["Place type"]
         lat = row["Latitude"]
         lng = row["Longitude"]
+        
+        tags_raw = row[tags_col] if tags_col and not pd.isna(row[tags_col]) else ""
+        tags_list = [t.strip() for t in str(tags_raw).split(",")] if str(tags_raw).strip() else []
 
-        if pd.isna(place_name) or pd.isna(place_type) or pd.isna(lat) or pd.isna(lng):
+        # If required fields are missing/empty, gracefully skip the row
+        if pd.isna(place_name) or str(place_name).strip() == "" or \
+           pd.isna(place_type) or str(place_type).strip() == "" or \
+           pd.isna(lat) or str(lat).strip() == "" or \
+           pd.isna(lng) or str(lng).strip() == "":
             df.at[index, "Status"] = "Skipped"
             df.at[index, "Failure Reason"] = "Missing required fields"
             continue
             
         try:
-            lat_f = float(lat)
-            lng_f = float(lng)
-        except ValueError:
+            lat_f = parse_coordinate(lat)
+            lng_f = parse_coordinate(lng)
+        except ValueError as e:
             df.at[index, "Status"] = "Failed"
-            df.at[index, "Failure Reason"] = "Latitude or Longitude is not a valid number"
+            df.at[index, "Failure Reason"] = f"Coordinate format error: {str(e)}"
             continue
 
         pending_rows = total_rows - processed_count
@@ -171,7 +228,7 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
             address_data = get_address_data(session, lat_f, lng_f, google_api_key)
             
             # 2. Build Payload
-            payload = build_payload(str(place_name), str(place_type), address_data)
+            payload = build_payload(str(place_name), str(place_type), address_data, tags_list)
 
             # 3. Create Place
             resp = session.post(
