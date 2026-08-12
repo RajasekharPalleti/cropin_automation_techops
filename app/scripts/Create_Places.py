@@ -212,6 +212,12 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
             df.at[index, "Failure Reason"] = "Missing required fields"
             continue
             
+        # Strip any leading/trailing spaces
+        place_name = str(place_name).strip()
+        place_type = str(place_type).strip()
+        lat = str(lat).strip()
+        lng = str(lng).strip()
+            
         try:
             lat_f = parse_coordinate(lat)
             lng_f = parse_coordinate(lng)
