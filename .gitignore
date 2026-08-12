@@ -28,3 +28,6 @@ scheduled_uploads/
 tests/
 tmp/
 scheduled_jobs.json
+
+# Local Configuration
+json_config/weekly_report_config.json
