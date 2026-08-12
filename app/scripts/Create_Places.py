@@ -176,7 +176,7 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
         return
 
     # Add columns for output and ensure string type for safety
-    for col in ["Status", "Failure Reason", "Place ID"]:
+    for col in ["Status", "Failure Reason", "Place ID", "Response"]:
         if col not in df.columns:
             df[col] = ""
         df[col] = df[col].fillna("").astype(str)
@@ -241,9 +241,10 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
         try:
             lat_f = parse_coordinate(lat)
             lng_f = parse_coordinate(lng)
-        except ValueError as e:
+        except Exception as e:
             df.at[index, "Status"] = "Failed"
-            df.at[index, "Failure Reason"] = f"Coordinate format error: {str(e)}"
+            df.at[index, "Failure Reason"] = f"Coordinate format error: {e}"
+            log(f"   ❌ Coordinate Error: {e}")
             continue
 
         pending_rows = total_rows - processed_count
@@ -269,6 +270,7 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
                     data = resp.json()
                     pid = data.get("id") or data.get("data", {}).get("id")
                     df.at[index, "Status"] = "Success"
+                    df.at[index, "Response"] = json.dumps(data)
                     if pid:
                         df.at[index, "Place ID"] = str(pid)
                         log(f"   ✅ Successfully created place → ID: {pid}")
@@ -276,11 +278,13 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
                         log("   ✅ Success but failed to extract ID from JSON")
                 except Exception:
                     df.at[index, "Status"] = "Success (JSON Parse Failed)"
+                    df.at[index, "Response"] = resp.text
                     log("   ⚠️ Created but JSON parse failed")
             else:
                 err_text = resp.text[:200]
                 df.at[index, "Status"] = "Failed"
                 df.at[index, "Failure Reason"] = f"HTTP {resp.status_code}: {err_text}"
+                df.at[index, "Response"] = resp.text
                 log(f"   ❌ Failed ({resp.status_code}) → {err_text}")
 
         except Exception as e:
