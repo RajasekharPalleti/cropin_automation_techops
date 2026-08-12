@@ -352,6 +352,7 @@ SCRIPT_CONFIGS = {
         "requires_input": True,
         "show_threading": True,
     },
+
 }
 
 # Fallback config used when a script is not listed in SCRIPT_CONFIGS above.

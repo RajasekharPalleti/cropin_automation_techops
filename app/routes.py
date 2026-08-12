@@ -961,6 +961,59 @@ async def stream_server_logs(request: Request):
         }
     )
 
+# ---------------------------------------------------------------------------
+# Weekly Report standalone endpoint
+# ---------------------------------------------------------------------------
+
+@router.post("/api/weekly-report/run")
+async def run_weekly_report():
+    import queue
+    import threading
+    import importlib.util
+    
+    q = queue.Queue()
+    
+    def run_script():
+        try:
+            script_path = os.path.join("app", "standalone", "Weekly_Report.py")
+            if not os.path.exists(script_path):
+                q.put("ERROR: Weekly_Report.py not found in app/standalone/\n")
+                q.put("DONE")
+                return
+
+            spec = importlib.util.spec_from_file_location("weekly_report", script_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            
+            def log_callback(msg):
+                q.put(msg + "\n")
+            
+            output_path = os.path.join(OUTPUT_DIR, "Weekly_Report_Output.xlsx")
+            module.run(None, output_path, {}, log_callback=log_callback)
+            
+            # Backup the generated report
+            if os.path.exists(output_path):
+                from app.state import backup_manager
+                q.put("Backing up output to Google Drive...\n")
+                backup_manager.upload_file(output_path)
+                
+            q.put("DONE")
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            q.put(f"ERROR: {str(e)}\n")
+            q.put("DONE")
+
+    threading.Thread(target=run_script, daemon=True).start()
+
+    async def log_generator():
+        while True:
+            line = await asyncio.to_thread(q.get)
+            if line == "DONE":
+                break
+            yield line
+
+    return StreamingResponse(log_generator(), media_type="text/plain")
 
 
 # ---------------------------------------------------------------------------

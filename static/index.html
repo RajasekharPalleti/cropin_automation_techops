@@ -413,6 +413,11 @@
                                 <span class="material-icons" style="font-size:1.1rem;color:#1565c0;">backup</span>
                                 Backup Files
                             </button>
+                            <div style="height:1px;background:#eee;margin:0 12px;"></div>
+                            <button id="weekly-report-nav-btn" onclick="closeToolsMenu()" style="display:flex;align-items:center;gap:10px;padding:11px 16px;width:100%;background:none;border:none;color:#1a1a2e;font-size:0.88rem;font-weight:500;cursor:pointer;text-align:left;transition:background .12s;" onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background=''">
+                                <span class="material-icons" style="font-size:1.1rem;color:#d84315;">assessment</span>
+                                Weekly Report
+                            </button>
                         </div>
                     </div>
                     <script>
@@ -1094,6 +1099,37 @@
         </div>
     </div>
 
+    <!-- Weekly Report Modal -->
+    <div id="weekly-report-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:600px; padding:20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0;">Weekly Report</h2>
+                <span class="close" id="weekly-report-close">&times;</span>
+            </div>
+            
+            <p style="color:#555; margin-bottom: 20px; font-size: 0.95rem;">
+                This will query Jira for legacy issues (Overall + Last 4 weeks) and email the report.
+            </p>
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                <button class="btn-primary" id="weekly-report-run-btn" style="flex:1;">
+                    <span class="material-icons" style="font-size:1.1rem;">play_arrow</span> Run Report Now
+                </button>
+            </div>
+            
+            <div id="weekly-report-status" style="display:none; margin-bottom:15px; font-weight:500;"></div>
+            
+            <div class="terminal-container" style="max-height:300px; margin-top:0; background: #1a1a2e; border-radius: 6px; overflow: hidden;">
+                <div class="terminal-header" style="background: #2a2a40; color: #fff; padding: 8px 12px; font-size: 12px; font-family: monospace;">
+                    <span>Logs</span>
+                </div>
+                <div id="weekly-report-console" class="terminal-content" style="max-height:250px; overflow-y:auto; font-size:13px; color:#e2e8f0; padding: 12px; font-family: monospace; line-height: 1.5;">
+                    <!-- Logs will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- JS Modules — loaded in dependency order (defer preserves order) -->
     <script src="/static/js/ui.js" defer></script>
     <script src="/static/js/wake_lock.js" defer></script>
@@ -1103,6 +1139,7 @@
     <script src="/static/js/backup.js" defer></script>
     <script src="/static/js/app.js?v=5" defer></script>
     <script src="/static/js/admin_logs.js?v=21" defer></script>
+    <script src="/static/js/weekly_report.js" defer></script>
 </body>
 
 </html>
