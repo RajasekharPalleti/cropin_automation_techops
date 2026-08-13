@@ -25,9 +25,19 @@ def safe_log_print(*args, **kwargs):
 print = safe_log_print
 
 
-STATUS_URL = "http://127.0.0.1:4444/api/server/status"
-SHUTDOWN_URL = "http://127.0.0.1:4444/api/server/shutdown"
-SERVER_PORT = 4444
+def get_server_port():
+    try:
+        with open("app/script_configs.py", "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip().startswith("SERVER_PORT"):
+                    return int(line.split("=")[1].strip())
+    except Exception:
+        pass
+    return 4444
+
+SERVER_PORT = get_server_port()
+STATUS_URL = f"http://127.0.0.1:{SERVER_PORT}/api/server/status"
+SHUTDOWN_URL = f"http://127.0.0.1:{SERVER_PORT}/api/server/shutdown"
 SERVER_STARTUP_TIMEOUT = 120  # Max seconds to wait for server to come up
 
 

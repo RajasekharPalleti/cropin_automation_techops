@@ -8,9 +8,19 @@ import socket
 # Standalone force restart script
 # Mirrors the restart logic from auto_update.py but without the Git pull.
 
-SHUTDOWN_URL = "http://127.0.0.1:4444/api/server/shutdown"
+def get_server_port():
+    try:
+        with open("app/script_configs.py", "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip().startswith("SERVER_PORT"):
+                    return int(line.split("=")[1].strip())
+    except Exception:
+        pass
+    return 4444
+
+SERVER_PORT = get_server_port()
+SHUTDOWN_URL = f"http://127.0.0.1:{SERVER_PORT}/api/server/shutdown"
 SAFE_LOG_FILE = "server.log"
-SERVER_PORT = 4444
 SERVER_STARTUP_TIMEOUT = 120  # Max seconds to wait for server to come up
 
 def safe_log_print(*args):
