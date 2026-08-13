@@ -11,14 +11,15 @@ echo.
 pause
 
 set STARTUP_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup
-set PROJECT_DIR=%~dp0
+set SCRIPT_DIR=%~dp0
+set PROJECT_DIR=%~dp0..
 
 echo.
 echo [1/2] Creating shortcut for Server...
-powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut('%STARTUP_DIR%\CropinServer.lnk'); $s.TargetPath='%PROJECT_DIR%batch_scripts\run_server.bat'; $s.WorkingDirectory='%PROJECT_DIR%'; $s.Save()"
+powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut('%STARTUP_DIR%\CropinServer.lnk'); $s.TargetPath='%SCRIPT_DIR%run_server.bat'; $s.WorkingDirectory='%PROJECT_DIR%'; $s.Save()"
 
 echo [2/2] Creating shortcut for Ngrok...
-powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut('%STARTUP_DIR%\CropinNgrok.lnk'); $s.TargetPath='%PROJECT_DIR%batch_scripts\run_ngrok.bat'; $s.WorkingDirectory='%PROJECT_DIR%'; $s.Save()"
+powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut('%STARTUP_DIR%\CropinNgrok.lnk'); $s.TargetPath='%SCRIPT_DIR%run_ngrok.bat'; $s.WorkingDirectory='%PROJECT_DIR%'; $s.Save()"
 
 echo.
 echo SUCCESS! 
