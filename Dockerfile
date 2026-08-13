@@ -25,8 +25,8 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # Copy the startup script and make it executable
-COPY run_railway.sh .
-RUN chmod +x run_railway.sh
+COPY start.sh .
+RUN chmod +x start.sh
 
 # Define the command to run the app using the script
-CMD ["./run_railway.sh"]
+CMD ["./start.sh"]
