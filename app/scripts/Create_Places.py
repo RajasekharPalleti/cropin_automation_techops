@@ -21,16 +21,16 @@ def parse_coordinate(coord_str) -> float:
         
     coord_str = str(coord_str).strip().upper()
     
-    # Convert Spanish 'O' (Oeste) to 'W' (West) for standardization
-    coord_str = coord_str.replace('O', 'W')
-    
+    # If the coordinate ends with 'O' (Oeste), replace it with 'W' (West)
+    if coord_str.endswith('O'):
+        coord_str = coord_str[:-1] + 'W'
+        
     # Replace comma with period for decimals
     coord_str = coord_str.replace(',', '.')
     
     # Replace common typography to spaces for easier splitting
     clean_str = coord_str.replace("''", '"').replace('′', "'").replace('″', '"').replace('°', ' ')
     
-    # Check for direction (O stands for Oeste / West in Spanish)
     direction_multiplier = 1
     if 'S' in clean_str or 'W' in clean_str:
         direction_multiplier = -1
@@ -270,6 +270,11 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
             f_addr = address_data.get("formattedAddress", "").strip()
             country = address_data.get("country", "").strip()
             locality = address_data.get("locality", "").strip()
+            
+            # Fallback for missing locality (common in rural farm areas)
+            if not locality:
+                locality = address_data.get("administrativeAreaLevel2", "").strip() or address_data.get("administrativeAreaLevel1", "").strip()
+                address_data["locality"] = locality
             
             if not f_addr or not country or not locality:
                 df.at[index, "Status"] = "Failed"
