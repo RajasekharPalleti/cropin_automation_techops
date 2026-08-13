@@ -21,6 +21,9 @@ def parse_coordinate(coord_str) -> float:
         
     coord_str = str(coord_str).strip().upper()
     
+    # Convert Spanish 'O' (Oeste) to 'W' (West) for standardization
+    coord_str = coord_str.replace('O', 'W')
+    
     # Replace comma with period for decimals
     coord_str = coord_str.replace(',', '.')
     
@@ -29,9 +32,9 @@ def parse_coordinate(coord_str) -> float:
     
     # Check for direction (O stands for Oeste / West in Spanish)
     direction_multiplier = 1
-    if 'S' in clean_str or 'W' in clean_str or 'O' in clean_str:
+    if 'S' in clean_str or 'W' in clean_str:
         direction_multiplier = -1
-    elif clean_str.startswith('-') and 'S' not in clean_str and 'W' not in clean_str and 'O' not in clean_str:
+    elif clean_str.startswith('-') and 'S' not in clean_str and 'W' not in clean_str:
         direction_multiplier = -1
         
     # Extract numbers
@@ -63,7 +66,10 @@ def get_address_data(session: requests.Session, lat: float, lng: float, google_a
     try:
         resp = session.get("https://maps.googleapis.com/maps/api/geocode/json", params=params, timeout=10)
         data = resp.json()
-    except Exception:
+        if data.get("status") != "OK":
+            print(f"⚠️ Google API returned non-OK status: {data.get('status')} - {data.get('error_message', 'No details')}")
+    except Exception as e:
+        print(f"⚠️ Google API request failed: {e}")
         data = {}
 
     comps = {
@@ -78,36 +84,41 @@ def get_address_data(session: requests.Session, lat: float, lng: float, google_a
     
     formatted_address = ""
     place_id = ""
-    glat = lat
-    glng = lng
+    is_natural_feature = False
 
     if data.get("status") == "OK" and data.get("results"):
-        result = data["results"][0]
-        formatted_address = result.get("formatted_address", "")
-        place_id = result.get("place_id", "")
+        results = data["results"]
+        # Take the most specific address, place ID, and geometry from the first result
+        formatted_address = results[0].get("formatted_address", "")
+        place_id = results[0].get("place_id", "")
+        
+        # Check if Google classifies this primarily as a natural feature (like an ocean or lake)
+        if "natural_feature" in results[0].get("types", []):
+            is_natural_feature = True
 
-        comps_raw = result.get("address_components", [])
-        for c in comps_raw:
-            t = c.get("types", [])
-            if "country" in t:
-                comps["country"] = c.get("long_name", "")
-            elif "administrative_area_level_1" in t:
-                comps["administrativeAreaLevel1"] = c.get("long_name", "")
-            elif "administrative_area_level_2" in t:
-                comps["administrativeAreaLevel2"] = c.get("long_name", "")
-            elif "locality" in t:
-                comps["locality"] = c.get("long_name", "")
-            elif "sublocality_level_1" in t:
-                comps["sublocalityLevel1"] = c.get("long_name", "")
-            elif "sublocality_level_2" in t:
-                comps["sublocalityLevel2"] = c.get("long_name", "")
-            elif "postal_code" in t:
-                comps["postalCode"] = c.get("long_name", "")
+        # Iterate through all results to collect any missing address components
+        for result in results:
+            comps_raw = result.get("address_components", [])
+            for c in comps_raw:
+                t = c.get("types", [])
+                if "country" in t and not comps["country"]:
+                    comps["country"] = c.get("long_name", "")
+                elif "administrative_area_level_1" in t and not comps["administrativeAreaLevel1"]:
+                    comps["administrativeAreaLevel1"] = c.get("long_name", "")
+                elif "administrative_area_level_2" in t and not comps["administrativeAreaLevel2"]:
+                    comps["administrativeAreaLevel2"] = c.get("long_name", "")
+                elif "locality" in t and not comps["locality"]:
+                    comps["locality"] = c.get("long_name", "")
+                elif "sublocality_level_1" in t and not comps["sublocalityLevel1"]:
+                    comps["sublocalityLevel1"] = c.get("long_name", "")
+                elif "sublocality_level_2" in t and not comps["sublocalityLevel2"]:
+                    comps["sublocalityLevel2"] = c.get("long_name", "")
+                elif "postal_code" in t and not comps["postalCode"]:
+                    comps["postalCode"] = c.get("long_name", "")
 
-        geometry = result.get("geometry", {}).get("location", {})
-        glat = geometry.get("lat", lat)
-        glng = geometry.get("lng", lng)
-
+    # Always use the EXACT original coordinates. 
+    # Do NOT overwrite them with Google's reverse-geocoded geometry,
+    # as Google might snap them to the center of a broad region (or the sea)!
     return {
         "country": comps["country"],
         "formattedAddress": formatted_address,
@@ -121,8 +132,9 @@ def get_address_data(session: requests.Session, lat: float, lng: float, google_a
         "houseNo": "",
         "buildingName": "",
         "placeId": place_id,
-        "latitude": glat,
-        "longitude": glng,
+        "latitude": lat,
+        "longitude": lng,
+        "is_natural_feature": is_natural_feature,
     }
 
 
@@ -253,6 +265,28 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
         try:
             # 1. Fetch Address
             address_data = get_address_data(session, lat_f, lng_f, google_api_key)
+            
+            # Address Validation: formattedAddress, country, and locality are MANDATORY
+            f_addr = address_data.get("formattedAddress", "").strip()
+            country = address_data.get("country", "").strip()
+            locality = address_data.get("locality", "").strip()
+            
+            if not f_addr or not country or not locality:
+                df.at[index, "Status"] = "Failed"
+                df.at[index, "Failure Reason"] = "Failed to fetch the address with the co ordinates"
+                log("   ❌ Failed: Failed to fetch the address with the co ordinates")
+                processed_count += 1
+                time.sleep(delay_time)
+                continue
+                
+            # Block addresses that are explicitly natural features (like Oceans/Seas)
+            if address_data.get("is_natural_feature"):
+                df.at[index, "Status"] = "Failed"
+                df.at[index, "Failure Reason"] = "Coordinate is located in a body of water (Sea/Ocean)"
+                log("   ❌ Failed: Coordinate is located in a body of water (Sea/Ocean)")
+                processed_count += 1
+                time.sleep(delay_time)
+                continue
             
             # 2. Build Payload
             payload = build_payload(str(place_name), str(place_type), address_data, tags_list)

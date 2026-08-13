@@ -309,6 +309,11 @@ SCRIPT_CONFIGS = {
         "requires_input": True,
         "show_google_api_config": True,
     },
+    "Delete_Places.py": {
+        "base_api_url": "https://cloud.cropin.in/services/farm/api/place",
+        "label": "Place API URL",
+        "requires_input": True,
+    },
     "Get_Lat_Long_AreaCount.py": {
         "base_api_url": "N/A",
         "label": "N/A",
