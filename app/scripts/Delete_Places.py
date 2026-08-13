@@ -15,7 +15,12 @@ def run(input_excel_file, output_excel_file, config, log_callback=None):
         print(msg)
 
     # 1. Configuration & Auth
-    api_url = config.get("base_api_url", "https://cloud.cropin.in/services/farm/api/place")
+    base_api = config.get("base_api_url", "https://cloud.cropin.in/services/farm/api").rstrip('/')
+    if not base_api.endswith("/place"):
+        api_url = f"{base_api}/place"
+    else:
+        api_url = base_api
+        
     token = config.get("token")
     delay_time = float(config.get("delay_time", 1.0))
 
