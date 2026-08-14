@@ -1100,6 +1100,7 @@ async def deforestation_page():
     return FileResponse("static/deforestation.html")
 
 
+@router.head("/")
 @router.get("/")
 async def read_root():
     """Serve the main single-page application."""
