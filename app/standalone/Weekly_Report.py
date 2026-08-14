@@ -332,7 +332,7 @@ def _send_email(cfg, subject, body, overall_img_data, recent_img_data):
         server.sendmail(mail_from, mail_to + mail_cc, msg.as_string())
 
 
-def run(input_excel, output_excel, config, log_callback=None):
+def run(input_excel, output_excel, config, log_callback=None, action="send"):
     def log(msg):
         if log_callback:
             log_callback(msg)
@@ -352,6 +352,10 @@ def run(input_excel, output_excel, config, log_callback=None):
     log("Querying Jira: issues opened in LAST 4 WEEKS...")
     recent_issues = _jira_search(base_url, jira_email, jira_api_token, JQL_LAST_4_WEEKS, log)
     log(f"Found {len(recent_issues)} issue(s) from the last 4 weeks.")
+
+    if action == "fetch":
+        log("Data fetch complete. Please review the counts before sending the email.")
+        return
 
     body, overall_img, recent_img = _build_email_body(base_url, overall_issues, recent_issues)
     today = datetime.date.today().strftime("%d %b %Y")

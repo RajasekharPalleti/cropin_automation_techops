@@ -966,7 +966,7 @@ async def stream_server_logs(request: Request):
 # ---------------------------------------------------------------------------
 
 @router.post("/api/weekly-report/run")
-async def run_weekly_report():
+async def run_weekly_report(action: str = "send"):
     import queue
     import threading
     import importlib.util
@@ -989,7 +989,7 @@ async def run_weekly_report():
                 q.put(msg + "\n")
             
             output_path = os.path.join(OUTPUT_DIR, "Weekly_Report_Output.xlsx")
-            module.run(None, output_path, {}, log_callback=log_callback)
+            module.run(None, output_path, {}, log_callback=log_callback, action=action)
             
             # Backup the generated report
             if os.path.exists(output_path):

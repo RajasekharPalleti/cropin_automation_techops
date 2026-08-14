@@ -12,3 +12,4 @@ google-auth-oauthlib
 schedule
 pyproj
 shapely
+matplotlib
