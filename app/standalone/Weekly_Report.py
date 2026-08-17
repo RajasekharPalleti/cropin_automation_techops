@@ -324,7 +324,7 @@ def _send_email(cfg, subject, body, overall_img_data, recent_img_data):
         img2.add_header('Content-ID', '<recent_chart>')
         msg.attach(img2)
 
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
+    with smtplib.SMTP(smtp_host, smtp_port, timeout=120) as server:
         import ssl
         context = ssl._create_unverified_context()
         server.starttls(context=context)
@@ -345,13 +345,39 @@ def run(input_excel, output_excel, config, log_callback=None, action="send"):
     jira_email = cfg["jira_email"]
     jira_api_token = cfg["jira_api_token"]
 
-    log("Querying Jira: OVERALL legacy issues (open > 30 days)...")
-    overall_issues = _jira_search(base_url, jira_email, jira_api_token, JQL_OVERALL, log)
-    log(f"Found {len(overall_issues)} overall legacy issue(s).")
+    CACHE_PATH = os.path.join("json_config", "weekly_report_cache.json")
+    import time
+    
+    use_cache = False
+    if action == "send" and os.path.exists(CACHE_PATH):
+        if time.time() - os.path.getmtime(CACHE_PATH) < 1800: # 30 mins
+            try:
+                with open(CACHE_PATH, "r", encoding="utf-8") as f:
+                    cache_data = json.load(f)
+                    overall_issues = cache_data.get("overall_issues")
+                    recent_issues = cache_data.get("recent_issues")
+                    if overall_issues is not None and recent_issues is not None:
+                        use_cache = True
+                        log("Using cached Jira data from the recent Fetch...")
+                        log(f"Found {len(overall_issues)} overall legacy issue(s).")
+                        log(f"Found {len(recent_issues)} issue(s) from the last 4 weeks.")
+            except Exception:
+                pass
 
-    log("Querying Jira: issues opened in LAST 4 WEEKS...")
-    recent_issues = _jira_search(base_url, jira_email, jira_api_token, JQL_LAST_4_WEEKS, log)
-    log(f"Found {len(recent_issues)} issue(s) from the last 4 weeks.")
+    if not use_cache:
+        log("Querying Jira: OVERALL legacy issues (open > 30 days)...")
+        overall_issues = _jira_search(base_url, jira_email, jira_api_token, JQL_OVERALL, log)
+        log(f"Found {len(overall_issues)} overall legacy issue(s).")
+
+        log("Querying Jira: issues opened in LAST 4 WEEKS...")
+        recent_issues = _jira_search(base_url, jira_email, jira_api_token, JQL_LAST_4_WEEKS, log)
+        log(f"Found {len(recent_issues)} issue(s) from the last 4 weeks.")
+        
+        try:
+            with open(CACHE_PATH, "w", encoding="utf-8") as f:
+                json.dump({"overall_issues": overall_issues, "recent_issues": recent_issues}, f)
+        except Exception as e:
+            log(f"Warning: could not save cache: {e}")
 
     if action == "fetch":
         log("Data fetch complete. Please review the counts before sending the email.")
@@ -361,6 +387,12 @@ def run(input_excel, output_excel, config, log_callback=None, action="send"):
     today = datetime.date.today().strftime("%d %b %Y")
     subject = f"Weekly Legacy Issues Report — SMFP / Services — {today}"
 
-    log(f"Sending email to: {cfg.get('mail_to')}")
+    mail_to_str = cfg.get('mail_to', '')
+    mail_cc_str = cfg.get('mail_cc', '')
+    if mail_cc_str:
+        log(f"Sending email to: {mail_to_str} (CC: {mail_cc_str})")
+    else:
+        log(f"Sending email to: {mail_to_str}")
+        
     _send_email(cfg, subject, body, overall_img, recent_img)
     log("Email sent successfully.")
