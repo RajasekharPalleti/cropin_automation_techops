@@ -1100,6 +1100,12 @@ async def deforestation_page():
     return FileResponse("static/deforestation.html")
 
 
+@router.get("/translation")
+async def translation_page():
+    """Serve the standalone translation page."""
+    return FileResponse("static/translation.html")
+
+
 @router.head("/")
 @router.get("/")
 async def read_root():

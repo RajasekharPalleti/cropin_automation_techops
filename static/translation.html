@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation — TechOps Automation Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" href="/static/images/logo.png" type="image/png">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1976d2;
+            --primary-hover: #1565c0;
+            --bg: #f4f6f9;
+            --surface: #ffffff;
+            --border: #dde3ec;
+            --text: #1a1a2e;
+            --muted: #6b7280;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        /* ── Top bar ── */
+        .topbar {
+            background: #1b2a3b;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            height: 54px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,.25);
+        }
+        .topbar-left { display: flex; align-items: center; gap: 10px; }
+        .topbar-title { font-size: 1.05rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .back-btn {
+            background: none; border: 1px solid rgba(255,255,255,.35); color: #fff;
+            border-radius: 6px; padding: 5px 12px; font-size: 0.83rem; cursor: pointer;
+            display: flex; align-items: center; gap: 4px; transition: background .15s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,.12); }
+        .logout-btn {
+            background: #c0392b; border: none; color: #fff;
+            border-radius: 6px; padding: 6px 14px; font-size: 0.83rem; cursor: pointer;
+            display: flex; align-items: center; gap: 4px; transition: background .15s;
+        }
+        .logout-btn:hover { background: #a93226; }
+
+        /* ── Session banner ── */
+        .session-banner {
+            background: #e3f2fd; border-bottom: 1px solid #bbdefb;
+            padding: 8px 20px; font-size: 0.82rem; color: #1565c0;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* ── Page wrapper ── */
+        .page { max-width: 860px; margin: 0 auto; padding: 28px 18px 60px; }
+
+        /* ── Cards / screens ── */
+        .card {
+            background: var(--surface); border-radius: 12px;
+            border: 1px solid var(--border); padding: 28px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        }
+        .card-title {
+            font-size: 1.05rem; font-weight: 700; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 8px; color: #1b2a3b;
+        }
+
+        /* ── Form helpers ── */
+        label.field-label { font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 5px; }
+        .field-group { display: flex; flex-direction: column; gap: 14px; }
+        .field-row { display: flex; gap: 12px; }
+        .field-row > div { flex: 1; }
+        .form-input {
+            width: 100%; padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px;
+            font-size: 0.88rem; font-family: inherit; background: #fff; color: #222;
+            transition: border-color .2s;
+        }
+        .form-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(25,118,210,.15); }
+        .form-input:disabled { background: #f5f5f5; color: #999; }
+        .req { color: #c0392b; }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 18px; border-radius: 6px; border: none;
+            font-size: 0.88rem; font-weight: 500; cursor: pointer;
+            font-family: inherit; transition: background .15s, transform .1s, box-shadow .15s;
+        }
+        .btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; }
+        .btn-primary  { background: var(--primary-color); color: #fff; }
+        .btn-primary:hover:not(:disabled)  { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(25,118,210,.25); }
+
+        /* ── Parent section ── */
+        .parent-section {
+            border: 2px solid #1565c0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--surface);
+            box-shadow: 0 3px 12px rgba(0,0,0,.08);
+        }
+        .parent-section-header {
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
+            color: #fff;
+            padding: 13px 20px;
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: .01em;
+        }
+        .parent-section-body {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 16px;
+        }
+        /* ── Sub-section ── */
+        .sub-section { border: 1px solid #dde3ec; border-radius: 8px; overflow: hidden; background: #fafbfc; }
+        .sub-section-header { background: #eceff1; color: #37474f; padding: 9px 16px; font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #dde3ec; }
+        .sub-section-body { display: flex; flex-direction: column; gap: 12px; padding: 14px; }
+
+        /* ── API card inside a section ── */
+        .api-section { background: #fff; border-radius: 7px; padding: 14px 16px; border: 1px solid #e8ecf1; }
+        .api-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+        .api-path { font-family: monospace; font-size: 0.82rem; color: #6b7280; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; margin-bottom: 14px; word-break: break-all; }
+        .status-msg { margin-top: 10px; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; }
+        .error-msg { margin-top: 10px; font-size: 0.85rem; color: #c0392b; font-weight: 500; background: #fde8e8; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #c0392b; }
+        .btn-green { background: #2e7d32; color: #fff; }
+        .btn-green:hover:not(:disabled) { background: #1b5e20; }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+    </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+    <div class="topbar-left">
+        <button class="back-btn" onclick="window.location.href='/'">
+            <span class="material-icons" style="font-size:1rem;">arrow_back</span> Back
+        </button>
+        <div class="topbar-title">
+            <span class="material-icons" style="color:#64b5f6;">translate</span>
+            Translation
+        </div>
+    </div>
+    <button class="logout-btn" id="logout-btn" style="display:none;" onclick="doLogout()">
+        <span class="material-icons" style="font-size:1rem;">logout</span> Logout
+    </button>
+</div>
+
+<!-- Session banner (shown when logged in) -->
+<div class="session-banner" id="session-banner" style="display:none;">
+    <span class="material-icons" style="font-size:1rem;">verified_user</span>
+    <span id="session-info-text">Session active</span>
+</div>
+
+<div class="page">
+
+    <!-- ── SCREEN 1: Login ── -->
+    <div class="screen active" id="screen-login">
+        <div class="card" style="max-width:480px;margin:0 auto;">
+            <div class="card-title">
+                <span class="material-icons" style="color:var(--primary-color);">lock_open</span>
+                Login
+            </div>
+            
+            <div style="background: #e8f4fd; border-left: 4px solid #1976d2; padding: 12px 16px; margin-bottom: 20px; font-size: 0.85rem; color: #0d47a1; border-radius: 4px;">
+                <strong>Tip:</strong> If you are working with templates for a <em>specific tenant</em>, use <strong>Cloud</strong> login. If you are working with templates for the <em>entire environment</em>, use <strong>Meta</strong> login.
+            </div>
+            <div class="field-group">
+                <div>
+                    <label class="field-label">Login Type <span class="req">*</span></label>
+                    <select id="login-type" class="form-input">
+                        <option value="cloud">Cloud</option>
+                        <option value="meta">Meta</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Environment <span class="req">*</span></label>
+                    <select id="env" class="form-input">
+                        <option value="QA">QA</option>
+                        <option value="UAT">UAT</option>
+                        <option value="PROD">PROD</option>
+                    </select>
+                </div>
+                <div id="tenant-container">
+                    <label class="field-label">Tenant Name <span class="req">*</span></label>
+                    <input type="text" id="tenant" class="form-input" placeholder="Enter tenant name">
+                </div>
+                <div>
+                    <label class="field-label">Username <span class="req">*</span></label>
+                    <input type="text" id="username" class="form-input" placeholder="Enter username">
+                </div>
+                <div>
+                    <label class="field-label">Password <span class="req">*</span></label>
+                    <input type="password" id="password" class="form-input" placeholder="Enter password">
+                </div>
+                <div id="login-error" class="error-msg" style="display:none; color: #c0392b; font-size: 0.85rem; margin-top: 8px;"></div>
+                <button class="btn btn-primary" id="login-btn" onclick="doLogin()" style="margin-top:4px;">
+                    <span class="material-icons" style="font-size:1rem;">lock_open</span>
+                    Authenticate & Proceed
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SCREEN 3: Operations ── -->
+    <div class="screen" id="screen-ops">
+        <div class="ops-grid">
+
+            <div class="parent-section">
+                <div class="parent-section-header">
+                    <span class="material-icons" style="font-size:1.2rem;">translate</span>
+                    Translation APIs
+                </div>
+                <div class="parent-section-body">
+                    <!-- ── Config sub-section (Meta only) ── -->
+                    <div class="sub-section" id="meta-config-section" style="display:none; margin-bottom: 10px;">
+                        <div class="sub-section-header">
+                            <span class="material-icons" style="font-size:1rem;">settings</span>
+                            Meta Configuration
+                        </div>
+                        <div class="sub-section-body">
+                            <div class="api-section">
+                                <div class="field-row" style="align-items:flex-end; gap: 12px; display: flex;">
+                                    <div style="flex:1;">
+                                        <label class="field-label">Tenant Name <span class="req">*</span></label>
+                                        <input type="text" id="meta-tenant" class="form-input" placeholder="Enter tenant name to fetch base URL">
+                                    </div>
+                                    <button class="btn btn-primary" id="meta-config-btn" onclick="fetchMetaBaseUrl()">
+                                        <span class="material-icons" style="font-size:1rem;">sync</span>
+                                        Fetch Base URL
+                                    </button>
+                                </div>
+                                <div id="meta-config-status" class="status-msg"></div>
+                                <div id="meta-config-error" class="error-msg" style="display:none;"></div>
+                            </div>
+                        </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="meta-apis-section">
+                    <!-- ── Download sub-section ── -->
+                    <div class="sub-section">
+                        <div class="sub-section-header">
+                            <span class="material-icons" style="font-size:1rem;">cloud_download</span>
+                            Download
+                        </div>
+                        <div class="sub-section-body">
+                            <!-- API 1: Download Template -->
+                            <div class="api-section" style="border-left:4px solid #1565c0; margin-bottom: 12px;">
+                                <div class="api-title" style="color:#1565c0;">Download Template</div>
+                                <div class="api-path">GET /meta/api/language-translates/download-template</div>
+                                <button class="btn btn-primary" id="dl-template-btn" onclick="doDownloadTemplate()">
+                                    <span class="material-icons" style="font-size:1rem;">cloud_download</span>
+                                    Download Template
+                                </button>
+                                <div id="dl-template-status" class="status-msg"></div>
+                                <div id="dl-template-error" class="error-msg" style="display:none;"></div>
+                            </div>
+
+                            <!-- API 2: Download English Strings -->
+                            <div class="api-section" style="border-left:4px solid #2980b9;">
+                                <div class="api-title" style="color:#2980b9;">Download English Strings</div>
+                                <div class="api-path">GET /meta/api/language-translates/download-english-strings</div>
+                                <button class="btn btn-primary" id="dl-eng-strings-btn" onclick="doDownloadEnglishStrings()" style="background: #2980b9;">
+                                    <span class="material-icons" style="font-size:1rem;">cloud_download</span>
+                                    Download English Strings
+                                </button>
+                                <div id="dl-eng-strings-status" class="status-msg"></div>
+                                <div id="dl-eng-strings-error" class="error-msg" style="display:none;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Upload sub-section ── -->
+                    <div class="sub-section" style="margin-top: 16px;">
+                        <div class="sub-section-header">
+                            <span class="material-icons" style="font-size:1rem;">cloud_upload</span>
+                            Upload
+                        </div>
+                        <div class="sub-section-body">
+                            <!-- API 2: Upload Template -->
+                            <div class="api-section" style="border-left:4px solid #f39c12;">
+                                <div class="api-title" style="color:#f39c12;">Upload Google Template</div>
+                                <div class="api-path">POST /meta/api/language-translates/google-template</div>
+                                
+                                <div class="field-row" style="margin-bottom: 12px; gap: 16px; flex-wrap: wrap;">
+                                    <div style="flex:1; min-width: 200px;">
+                                        <label class="field-label">Review Translation</label>
+                                        <select id="ul-review" class="form-input">
+                                            <option value="NO_REVIEW">NO_REVIEW</option>
+                                            <option value="REVIEW">REVIEW</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex:1; min-width: 200px;">
+                                        <label class="field-label">Uploaded By</label>
+                                        <input type="text" id="ul-uploaded-by" class="form-input" placeholder="Rajasekhar">
+                                    </div>
+                                    <div style="flex:1; min-width: 200px;">
+                                        <label class="field-label">Name</label>
+                                        <input type="text" id="ul-name" class="form-input" placeholder="SMFP-24937">
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 16px;">
+                                    <label class="field-label">Template File</label>
+                                    <input type="file" id="ul-file" class="form-input" accept=".xlsx,.xls,.csv" style="padding: 6px;">
+                                </div>
+
+                                <button class="btn btn-primary" id="ul-template-btn" onclick="doUploadTemplate()" style="background: #f39c12;">
+                                    <span class="material-icons" style="font-size:1rem;">cloud_upload</span>
+                                    Upload Template
+                                </button>
+                                <div id="ul-template-status" class="status-msg"></div>
+                                <div id="ul-template-error" class="error-msg" style="display:none;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Download to Review sub-section ── -->
+                    <div class="sub-section" style="margin-top: 16px;">
+                        <div class="sub-section-header">
+                            <span class="material-icons" style="font-size:1rem;">rate_review</span>
+                            Download to Review
+                        </div>
+                        <div class="sub-section-body">
+                            <!-- API 3: Download Translated File -->
+                            <div class="api-section" style="border-left:4px solid #8e44ad;">
+                                <div class="api-title" style="color:#8e44ad;">Download to Review</div>
+                                <div class="api-path">GET /meta/api/language-translates/download-translated-file</div>
+                                
+                                <div style="margin-bottom: 12px; max-width: 300px;">
+                                    <label class="field-label">Translation Upload ID</label>
+                                    <input type="text" id="dl-translated-id" class="form-input" placeholder="e.g. 12345">
+                                </div>
+
+                                <button class="btn btn-primary" id="dl-translated-btn" onclick="doDownloadTranslatedFile()" style="background: #8e44ad;">
+                                    <span class="material-icons" style="font-size:1rem;">download_for_offline</span>
+                                    Download File
+                                </button>
+                                <div id="dl-translated-status" class="status-msg"></div>
+                                <div id="dl-translated-error" class="error-msg" style="display:none;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Upload Review Template sub-section ── -->
+                    <div class="sub-section" style="margin-top: 16px;">
+                        <div class="sub-section-header">
+                            <span class="material-icons" style="font-size:1rem;">upload_file</span>
+                            Upload Review Template
+                        </div>
+                        <div class="sub-section-body">
+                            <!-- API 4: Upload Corrected Template -->
+                            <div class="api-section" style="border-left:4px solid #e67e22;">
+                                <div class="api-title" style="color:#e67e22;">Upload Review Template</div>
+                                <div class="api-path">POST /meta/api/language-translates/corrected-translation</div>
+                                
+                                <div class="field-row" style="margin-bottom: 12px; gap: 16px; flex-wrap: wrap;">
+                                    <div style="flex:1; min-width: 200px;">
+                                        <label class="field-label">File Type</label>
+                                        <input type="text" id="ul-corr-filetype" class="form-input" placeholder="REVIEWED" value="REVIEWED">
+                                    </div>
+                                    <div style="flex:1; min-width: 200px;">
+                                        <label class="field-label">Uploaded By</label>
+                                        <input type="text" id="ul-corr-uploaded-by" class="form-input" placeholder="Rajasekhar">
+                                    </div>
+                                    <div style="flex:1; min-width: 200px;">
+                                        <label class="field-label">Name</label>
+                                        <input type="text" id="ul-corr-name" class="form-input" placeholder="Rajaasptesting5">
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 16px;">
+                                    <label class="field-label">Corrected File</label>
+                                    <input type="file" id="ul-corr-file" class="form-input" accept=".xlsx,.xls,.csv" style="padding: 6px;">
+                                </div>
+
+                                <button class="btn btn-primary" id="ul-corr-btn" onclick="doUploadCorrectedTranslation()" style="background: #e67e22;">
+                                    <span class="material-icons" style="font-size:1rem;">upload_file</span>
+                                    Upload Corrected
+                                </button>
+                                <div id="ul-corr-status" class="status-msg"></div>
+                                <div id="ul-corr-error" class="error-msg" style="display:none;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                    </div> <!-- /meta-apis-section -->
+
+                    <div id="cloud-apis-section" style="display:none;">
+                        <!-- ── Cloud Download sub-section ── -->
+                        <div class="sub-section">
+                            <div class="sub-section-header">
+                                <span class="material-icons" style="font-size:1rem;">cloud_download</span>
+                                Cloud APIs
+                            </div>
+                            <div class="sub-section-body">
+                                <!-- Cloud API 1: Download translation template file -->
+                                <div class="api-section" style="border-left:4px solid #1abc9c;">
+                                    <div class="api-title" style="color:#1abc9c;">Download translation template file for specific tenant</div>
+                                    <div class="api-path">GET /services/fileupload-service/api/language-downloads/template</div>
+                                    
+                                    <div style="margin-bottom: 12px; max-width: 100%;">
+                                        <label class="field-label">
+                                            Language Codes
+                                            <span style="font-size: 0.75rem; font-weight: normal; color: #6b7280; margin-left: 6px;">(Select if you need to download specific languages)</span>
+                                        </label>
+                                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                                            <div class="custom-multiselect" id="cloud-lang-multiselect" style="position: relative; width: 250px; flex-shrink: 0; user-select: none;">
+                                                <div class="multiselect-header form-input" onclick="toggleLangDropdown()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff; min-height: 20px;">
+                                                    <span id="lang-selected-text" style="color: #6b7280; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">Select languages...</span>
+                                                    <span class="material-icons" style="font-size: 1.2rem; color: #999;">arrow_drop_down</span>
+                                                </div>
+                                                
+                                                <div class="multiselect-dropdown" id="lang-dropdown-box" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 100; margin-top: 4px;">
+                                                    <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                                                        <input type="text" id="lang-search-input" class="form-input" placeholder="Search languages..." onkeyup="filterLanguages()" style="width: 100%; box-sizing: border-box; margin: 0; padding: 6px;">
+                                                    </div>
+                                                    <div id="lang-checkbox-list" style="max-height: 200px; overflow-y: auto; padding: 4px;">
+                                                        <div style="padding: 8px; color: #999; font-size: 0.85rem;">Loading languages...</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div id="cloud-lang-chips" style="display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px;"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="field-row" style="margin-bottom: 16px; max-width: 450px;">
+                                        <div>
+                                            <label class="field-label">Max Retries (0 to 3)</label>
+                                            <input type="number" id="cloud-dl-retries" class="form-input" min="0" max="3" value="3">
+                                        </div>
+                                        <div>
+                                            <label class="field-label">Retry Interval (max 30s)</label>
+                                            <input type="number" id="cloud-dl-interval" class="form-input" min="1" max="30" value="5">
+                                        </div>
+                                    </div>
+
+                                    <button class="btn btn-primary" id="cloud-dl-label-btn" onclick="doCloudDownloadLabel()" style="background: #1abc9c;">
+                                        <span class="material-icons" style="font-size:1rem;">cloud_download</span>
+                                        Download Translation Template
+                                    </button>
+                                    <div id="cloud-dl-label-status" class="status-msg"></div>
+                                    <div id="cloud-dl-label-error" class="error-msg" style="display:none;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── Cloud Upload sub-section ── -->
+                        <div class="sub-section" style="margin-top: 16px;">
+                            <div class="sub-section-header">
+                                <span class="material-icons" style="font-size:1rem;">cloud_upload</span>
+                                Cloud Upload
+                            </div>
+                            <div class="sub-section-body">
+                                <!-- Cloud API 2: Upload Template -->
+                                <div class="api-section" style="border-left:4px solid #f39c12;">
+                                    <div class="api-title" style="color:#f39c12;">Upload corrected translation file for tenants</div>
+                                    <div class="api-path">POST /services/fileupload-service/api/language-uploads/template</div>
+                                    
+                                    <div style="margin-bottom: 16px;">
+                                        <label class="field-label">Template File</label>
+                                        <input type="file" id="cloud-ul-file" class="form-input" accept=".xlsx,.xls,.csv" style="padding: 6px;">
+                                    </div>
+
+                                    <button class="btn btn-primary" id="cloud-ul-btn" onclick="doCloudUploadTemplate()" style="background: #f39c12;">
+                                        <span class="material-icons" style="font-size:1rem;">cloud_upload</span>
+                                        Upload File
+                                    </button>
+                                    <div id="cloud-ul-status" class="status-msg"></div>
+                                    <div id="cloud-ul-error" class="error-msg" style="display:none;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- /cloud-apis-section -->
+
+            </div>        </div><!-- /ops-grid -->
+    </div><!-- /screen-ops -->
+
+</div><!-- /page -->
+
+<script src="/static/js/translation.js"></script>
+</body>
+</html>
