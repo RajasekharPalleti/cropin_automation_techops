@@ -481,6 +481,11 @@ async def get_template(script_name: str):
             template_path,
             filename=template_filename,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
         )
     raise HTTPException(
         status_code=404,

@@ -253,9 +253,19 @@
                         <!-- Specific Config for Area_Audit_To_CA -->
                         <div id="area-audit-config">
                             <div class="input-group">
-                                <label for="area-unit-select">Area Unit</label>
-                                <input type="text" id="area-unit-select" placeholder="e.g. Hectare, Acre"
-                                    value="Hectare">
+                                <label for="fetch-unit-from-script">Fetch Unit from Company Settings?</label>
+                                <select id="fetch-unit-from-script" onchange="document.getElementById('manual-area-unit-group').style.display = this.value === 'no' ? 'block' : 'none'; document.getElementById('company-id-fetch-group').style.display = this.value === 'yes' ? 'block' : 'none';">
+                                    <option value="yes" selected>Yes (Default)</option>
+                                    <option value="no">No (Manual)</option>
+                                </select>
+                            </div>
+                            <div class="input-group" id="company-id-fetch-group">
+                                <label for="fetch-company-id">Company ID</label>
+                                <input type="text" id="fetch-company-id" value="1251" placeholder="e.g. 1251">
+                            </div>
+                            <div class="input-group" id="manual-area-unit-group" style="display: none;">
+                                <label for="area-unit-select">Manual Area Unit</label>
+                                <input type="text" id="area-unit-select" placeholder="e.g. Hectare, Acre" value="Hectare">
                             </div>
                             <div class="input-group">
                                 <label for="force-crop-audited">Set 'cropAudited' Value?</label>

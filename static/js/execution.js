@@ -470,6 +470,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // 9. Area Audit Config
         const areaAuditConfig = document.getElementById('area-audit-config');
         if (areaAuditConfig && areaAuditConfig.style.display !== 'none') {
+            config.fetch_unit_from_script = document.getElementById('fetch-unit-from-script')?.value || 'yes';
+            config.fetch_company_id = document.getElementById('fetch-company-id')?.value || '1251';
             config.unit = document.getElementById('area-unit-select')?.value || 'Hectare';
             config.force_crop_audited = document.getElementById('force-crop-audited')?.value || 'true';
         }
