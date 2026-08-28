@@ -324,12 +324,18 @@ def _send_email(cfg, subject, body, overall_img_data, recent_img_data):
         img2.add_header('Content-ID', '<recent_chart>')
         msg.attach(img2)
 
-    with smtplib.SMTP(smtp_host, smtp_port, timeout=120) as server:
-        import ssl
-        context = ssl._create_unverified_context()
-        server.starttls(context=context)
-        server.login(smtp_user, smtp_password)
-        server.sendmail(mail_from, mail_to + mail_cc, msg.as_string())
+    import ssl
+    context = ssl._create_unverified_context()
+    
+    if smtp_port == 465:
+        with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=30, context=context) as server:
+            server.login(smtp_user, smtp_password)
+            server.sendmail(mail_from, mail_to + mail_cc, msg.as_string())
+    else:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
+            server.starttls(context=context)
+            server.login(smtp_user, smtp_password)
+            server.sendmail(mail_from, mail_to + mail_cc, msg.as_string())
 
 
 def run(input_excel, output_excel, config, log_callback=None, action="send"):
