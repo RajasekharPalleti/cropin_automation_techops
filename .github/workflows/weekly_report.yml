@@ -3,7 +3,7 @@ name: Weekly Report
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 10 * * 5' # Runs at 10:00 UTC every Friday
+    - cron: '35 13 * * 5' # Runs at 13:35 UTC (7:05 PM IST) every Friday
 
 jobs:
   run-report:
