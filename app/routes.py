@@ -1110,6 +1110,11 @@ async def translation_page():
     """Serve the standalone translation page."""
     return FileResponse("static/translation.html")
 
+@router.get("/housekeeping")
+async def housekeeping_page():
+    """Serve the standalone house keeping page."""
+    return FileResponse("static/housekeeping.html")
+
 
 @router.head("/")
 @router.get("/")

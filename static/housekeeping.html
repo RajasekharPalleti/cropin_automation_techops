@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Keeping — TechOps Automation Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="icon" href="/static/images/logo.png" type="image/png">
+    <style>
+        :root {
+            --primary-color: #1976d2;
+            --primary-hover: #1565c0;
+            --bg: #f4f6f9;
+            --surface: #ffffff;
+            --border: #dde3ec;
+            --text: #1a1a2e;
+            --muted: #6b7280;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        /* ── Top bar ── */
+        .topbar {
+            background: #1b2a3b;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            height: 54px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,.25);
+        }
+        .topbar-left { display: flex; align-items: center; gap: 10px; }
+        .topbar-title { font-size: 1.05rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .back-btn {
+            background: none; border: 1px solid rgba(255,255,255,.35); color: #fff;
+            border-radius: 6px; padding: 5px 12px; font-size: 0.83rem; cursor: pointer;
+            display: flex; align-items: center; gap: 4px; transition: background .15s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,.12); }
+        .logout-btn {
+            background: #c0392b; border: none; color: #fff;
+            border-radius: 6px; padding: 6px 14px; font-size: 0.83rem; cursor: pointer;
+            display: flex; align-items: center; gap: 4px; transition: background .15s;
+        }
+        .logout-btn:hover { background: #a93226; }
+
+        /* ── Session banner ── */
+        .session-banner {
+            background: #fff3e0; border-bottom: 1px solid #ffcc80;
+            padding: 8px 20px; font-size: 0.82rem; color: #e65100;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* ── Page wrapper ── */
+        .page { max-width: 860px; margin: 0 auto; padding: 28px 18px 60px; }
+
+        /* ── Cards / screens ── */
+        .card {
+            background: var(--surface); border-radius: 12px;
+            border: 1px solid var(--border); padding: 28px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        }
+        .card-title {
+            font-size: 1.05rem; font-weight: 700; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 8px; color: #1b2a3b;
+        }
+
+        /* ── Form helpers ── */
+        label.field-label { font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 5px; }
+        .field-group { display: flex; flex-direction: column; gap: 14px; }
+        .form-input {
+            width: 100%; padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px;
+            font-size: 0.88rem; font-family: inherit; background: #fff; color: #222;
+            transition: border-color .2s;
+        }
+        .form-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(25,118,210,.15); }
+        .form-input:disabled { background: #f5f5f5; color: #999; cursor: not-allowed; }
+        .req { color: #c0392b; }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 18px; border-radius: 6px; border: none;
+            font-size: 0.88rem; font-weight: 500; cursor: pointer;
+            font-family: inherit; transition: background .15s, transform .1s, box-shadow .15s;
+        }
+        .btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; }
+        .btn-primary  { background: var(--primary-color); color: #fff; }
+        .btn-primary:hover:not(:disabled)  { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(25,118,210,.25); }
+
+        /* ── Parent section ── */
+        .parent-section {
+            border: 2px solid #f57c00;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--surface);
+            box-shadow: 0 3px 12px rgba(0,0,0,.08);
+        }
+        .parent-section-header {
+            background: linear-gradient(135deg, #f57c00, #e65100);
+            color: #fff;
+            padding: 13px 20px;
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: .01em;
+        }
+        .parent-section-body {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 16px;
+        }
+        .api-section { background: #fff; border-radius: 7px; padding: 14px 16px; border: 1px solid #e8ecf1; }
+        .api-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+        .api-path { font-family: monospace; font-size: 0.82rem; color: #6b7280; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; margin-bottom: 14px; word-break: break-all; }
+        
+        .status-msg { margin-top: 10px; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; }
+        .error-msg { margin-top: 10px; font-size: 0.85rem; color: #c0392b; font-weight: 500; background: #fde8e8; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #c0392b; }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+        
+        /* Custom Tooltip */
+        .tooltip-container {
+            position: relative;
+            display: inline-flex;
+        }
+        .tooltip-container .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: #1e293b;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 6px 8px;
+            position: absolute;
+            z-index: 100;
+            bottom: 120%; /* Position above */
+            right: 0;
+            opacity: 0;
+            font-size: 0.75rem;
+            pointer-events: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            white-space: normal;
+        }
+        .tooltip-container .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            right: 20px;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+    <div class="topbar-left">
+        <button class="back-btn" onclick="window.location.href='/'">
+            <span class="material-icons" style="font-size:1rem;">arrow_back</span> Back
+        </button>
+        <div class="topbar-title">
+            <span class="material-icons" style="color:#ffb74d;">cleaning_services</span>
+            House Keeping
+        </div>
+    </div>
+    <button class="logout-btn" id="logout-btn" style="display:none;" onclick="doLogout()">
+        <span class="material-icons" style="font-size:1rem;">logout</span> Logout
+    </button>
+</div>
+
+<!-- Session banner -->
+<div class="session-banner" id="session-banner" style="display:none;">
+    <span class="material-icons" style="font-size:1rem;">verified_user</span>
+    <span id="session-info-text">Session active</span>
+</div>
+
+<div class="page">
+
+    <!-- ── SCREEN 1: Login ── -->
+    <div class="screen active" id="screen-login">
+        <div class="card" style="max-width:480px;margin:0 auto;">
+            <div class="card-title">
+                <span class="material-icons" style="color:var(--primary-color);">lock_open</span>
+                Cloud Login
+            </div>
+            
+            <div class="field-group">
+                <div>
+                    <label class="field-label">Environment <span class="req">*</span></label>
+                    <select id="env" class="form-input">
+                        <option value="QA">QA</option>
+                        <option value="UAT">UAT</option>
+                        <option value="PROD">PROD</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Tenant Name <span class="req">*</span></label>
+                    <input type="text" id="tenant" class="form-input" placeholder="Enter tenant name">
+                </div>
+                <div>
+                    <label class="field-label">Username <span class="req">*</span></label>
+                    <input type="text" id="username" class="form-input" placeholder="Enter username">
+                </div>
+                <div>
+                    <label class="field-label">Password <span class="req">*</span></label>
+                    <input type="password" id="password" class="form-input" placeholder="Enter password">
+                </div>
+                <div style="margin-top: 6px;">
+                    <button class="btn btn-primary" id="btn-login" style="width:100%; justify-content:center;" onclick="doLogin()">
+                        Authenticate
+                    </button>
+                </div>
+                <div id="login-error" class="error-msg" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SCREEN 2: Operations ── -->
+    <div class="screen" id="screen-ops">
+        
+        <div class="parent-section">
+            <div class="parent-section-header">
+                <span class="material-icons" style="font-size:1.2rem;">notifications_active</span>
+                House Keeping Triggers
+            </div>
+            <div class="parent-section-body">
+                
+                <!-- Bulk User Upload Section -->
+                <div class="api-section" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                    <div class="api-title" style="color:#0f172a; display: flex; align-items: center; justify-content: space-between;">
+                        <span><span class="material-icons" style="font-size: 1.1rem; vertical-align: middle;">group_add</span> Bulk Token Management</span>
+                        <button class="btn btn-secondary" onclick="downloadTemplate()" style="font-size: 0.8rem; padding: 4px 8px;">
+                            <span class="material-icons" style="font-size: 1rem;">download</span> Download Template
+                        </button>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px;">Upload an XLSX file exported directly from your DB. Click any row to load the token.</div>
+                    
+                    <div style="background-color: #e0f2fe; padding: 10px; border-radius: 4px; border: 1px solid #bae6fd; font-size: 0.8rem; margin-bottom: 12px; color: #0369a1;">
+                        <strong>Hint:</strong> Use this query to get bulk data from the DB:<br>
+                        <code style="display:block; margin-top: 6px; padding: 6px; background-color: #f0f9ff; border-radius: 4px; border: 1px dashed #bae6fd;">
+                            select id, name, device_token, contact_number from asp_farm.user where contact_number in ('9649964096', '1234560001','1234560002')
+                        </code>
+                    </div>
+
+                    <div>
+                        <input type="file" id="file-upload" accept=".xlsx" style="display:none;" onchange="handleFileUpload(event)">
+                        <button class="btn btn-secondary" onclick="document.getElementById('file-upload').click()" style="width: 100%; justify-content: center;">
+                            <span class="material-icons" style="font-size: 1rem;">upload_file</span> Upload XLSX
+                        </button>
+                    </div>
+
+                    <div id="file-table-container" style="margin-top: 16px; display: none; max-height: 200px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 4px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                            <thead style="background-color: #e2e8f0; position: sticky; top: 0;">
+                                <tr>
+                                    <th style="padding: 8px; border-bottom: 1px solid #cbd5e1;">ID</th>
+                                    <th style="padding: 8px; border-bottom: 1px solid #cbd5e1;">Name</th>
+                                    <th style="padding: 8px; border-bottom: 1px solid #cbd5e1;">Device Token</th>
+                                    <th style="padding: 8px; border-bottom: 1px solid #cbd5e1;">Contact Number</th>
+                                    <th style="padding: 8px; border-bottom: 1px solid #cbd5e1; width: 60px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="file-table-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="file-status" style="margin-top: 8px; font-size: 0.85rem; color: #2e7d32; font-weight: 500;"></div>
+                </div>
+
+                <!-- Global Device Token -->
+                <div style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e0e0e0;">
+                    <label class="field-label">Global FCM / Device Token <span class="req">*</span> <span style="font-size: 0.75rem; font-weight: normal; color: #6b7280; margin-left: 6px;">(Auto-populated)</span></label>
+                    <input type="text" id="pn-token" class="form-input" placeholder="Loading token...">
+                </div>
+
+                <!-- 1. DB Backup -->
+                <div class="api-section">
+                    <div class="api-title" style="color:#f57c00;">1. Trigger DB Backup</div>
+                    <div class="api-path">POST /services/communications/api/pushNotification</div>
+                    <div class="field-group">
+                        <div style="display: flex; gap: 12px;">
+                            <div style="flex:1;">
+                                <label class="field-label">App Platform</label>
+                                <input type="text" id="db-appPlatform" class="form-input" value="sfPlus">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="field-label">Trigger Type</label>
+                                <input type="text" id="db-triggerType" class="form-input" value="dbBackup">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Trigger ID <span class="req">*</span></label>
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" id="db-triggerId" class="form-input" value="Trigger ID - DB Backup -Grow-FG-ASP user ">
+                                <div class="tooltip-container">
+                                    <button type="button" class="btn btn-secondary" onclick="appendTimestamp('db-triggerId')" style="white-space:nowrap; padding: 0 12px;">Get Timestamp</button>
+                                    <span class="tooltip-text">Appends the current date and time to the Trigger ID</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Title <span class="req">*</span></label>
+                            <input type="text" id="db-title" class="form-input" value="Title - DB Backup -Grow-FG-ASP user">
+                        </div>
+                        <div>
+                            <label class="field-label">Body <span class="req">*</span></label>
+                            <input type="text" id="db-body" class="form-input" value="Body - DB Backup -Grow-FG-ASP user">
+                        </div>
+                        <div>
+                            <label class="field-label">Image URL</label>
+                            <input type="text" id="db-image" class="form-input" placeholder="Optional image URL">
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-primary" id="btn-db" onclick="sendPush('dbBackup')">
+                                <span class="material-icons" style="font-size:1rem;">send</span> Trigger DB Backup
+                            </button>
+                        </div>
+                        <div id="status-dbBackup"></div>
+                    </div>
+                </div>
+
+                <!-- 2. Logout -->
+                <div class="api-section">
+                    <div class="api-title" style="color:#e53935;">2. Trigger Logout</div>
+                    <div class="api-path">POST /services/communications/api/pushNotification</div>
+                    <div class="field-group">
+                        <div style="display: flex; gap: 12px;">
+                            <div style="flex:1;">
+                                <label class="field-label">App Platform</label>
+                                <input type="text" id="logout-appPlatform" class="form-input" value="sfPlus">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="field-label">Trigger Type</label>
+                                <input type="text" id="logout-triggerType" class="form-input" value="logout">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Trigger ID <span class="req">*</span></label>
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" id="logout-triggerId" class="form-input" value="ASP raja user-Logout-FG-trg ">
+                                <div class="tooltip-container">
+                                    <button type="button" class="btn btn-secondary" onclick="appendTimestamp('logout-triggerId')" style="white-space:nowrap; padding: 0 12px;">Get Timestamp</button>
+                                    <span class="tooltip-text">Appends the current date and time to the Trigger ID</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Title <span class="req">*</span></label>
+                            <input type="text" id="logout-title" class="form-input" value="ASP Raja user-Logout-FG-title">
+                        </div>
+                        <div>
+                            <label class="field-label">Body <span class="req">*</span></label>
+                            <input type="text" id="logout-body" class="form-input" value="ASP raja user-Logout-FG-Body">
+                        </div>
+                        <div>
+                            <label class="field-label">Image URL</label>
+                            <input type="text" id="logout-image" class="form-input" placeholder="Optional image URL">
+                        </div>
+                        <div>
+                            <label class="field-label" style="display:flex; align-items:center;">
+                                <input type="checkbox" id="logout-clearData" checked style="margin-right: 8px;">
+                                Clear Data Logout (clearDataLogout)
+                            </label>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-primary" id="btn-logout" onclick="sendPush('logout')" style="background-color: #e53935;">
+                                <span class="material-icons" style="font-size:1rem;">send</span> Trigger Logout
+                            </button>
+                        </div>
+                        <div id="status-logout"></div>
+                    </div>
+                </div>
+
+                <!-- 3. Full Sync -->
+                <div class="api-section">
+                    <div class="api-title" style="color:#0288d1;">3. Trigger Full Sync</div>
+                    <div class="api-path">POST /services/communications/api/pushNotification</div>
+                    <div class="field-group">
+                        <div style="display: flex; gap: 12px;">
+                            <div style="flex:1;">
+                                <label class="field-label">App Platform</label>
+                                <input type="text" id="fullSync-appPlatform" class="form-input" value="sfPlus">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="field-label">Trigger Type</label>
+                                <input type="text" id="fullSync-triggerType" class="form-input" value="fullSync">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Trigger ID <span class="req">*</span></label>
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" id="fullSync-triggerId" class="form-input" value="Trigger ID - Full sync Sent- Grow-FG-S22 ultra raja user ">
+                                <div class="tooltip-container">
+                                    <button type="button" class="btn btn-secondary" onclick="appendTimestamp('fullSync-triggerId')" style="white-space:nowrap; padding: 0 12px;">Get Timestamp</button>
+                                    <span class="tooltip-text">Appends the current date and time to the Trigger ID</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Title <span class="req">*</span></label>
+                            <input type="text" id="fullSync-title" class="form-input" value="Title - Full sync Sent- Grow-FG-S22 ultra raja user">
+                        </div>
+                        <div>
+                            <label class="field-label">Body <span class="req">*</span></label>
+                            <input type="text" id="fullSync-body" class="form-input" value="Body - Full sync Sent- Grow-FG-S22 ultra raja user">
+                        </div>
+                        <div>
+                            <label class="field-label">Image URL</label>
+                            <input type="text" id="fullSync-image" class="form-input" placeholder="Optional image URL">
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-primary" id="btn-fullSync" onclick="sendPush('fullSync')" style="background-color: #0288d1;">
+                                <span class="material-icons" style="font-size:1rem;">send</span> Trigger Full Sync
+                            </button>
+                        </div>
+                        <div id="status-fullSync"></div>
+                    </div>
+                </div>
+
+                <!-- 4. Unsync Status -->
+                <div class="api-section">
+                    <div class="api-title" style="color:#7b1fa2;">4. Trigger Unsync Status</div>
+                    <div class="api-path">POST /services/communications/api/pushNotification</div>
+                    <div class="field-group">
+                        <div style="display: flex; gap: 12px;">
+                            <div style="flex:1;">
+                                <label class="field-label">App Platform</label>
+                                <input type="text" id="unsync-appPlatform" class="form-input" value="sfPlus">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="field-label">Trigger Type</label>
+                                <input type="text" id="unsync-triggerType" class="form-input" value="unSyncedStatus">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Trigger ID <span class="req">*</span></label>
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" id="unsync-triggerId" class="form-input" value="Trigger id - ASP raja user Unsync Notification FG online ">
+                                <div class="tooltip-container">
+                                    <button type="button" class="btn btn-secondary" onclick="appendTimestamp('unsync-triggerId')" style="white-space:nowrap; padding: 0 12px;">Get Timestamp</button>
+                                    <span class="tooltip-text">Appends the current date and time to the Trigger ID</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Title <span class="req">*</span></label>
+                            <input type="text" id="unsync-title" class="form-input" value="Title - ASP raja user Unsync Notification FG online">
+                        </div>
+                        <div>
+                            <label class="field-label">Body <span class="req">*</span></label>
+                            <input type="text" id="unsync-body" class="form-input" value="Body - ASP raja user Unsync Notification FG online">
+                        </div>
+                        <div>
+                            <label class="field-label">Image URL</label>
+                            <input type="text" id="unsync-image" class="form-input" placeholder="Optional image URL">
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-primary" id="btn-unsync" onclick="sendPush('unsync')" style="background-color: #7b1fa2;">
+                                <span class="material-icons" style="font-size:1rem;">send</span> Trigger Unsync Status
+                            </button>
+                        </div>
+                        <div id="status-unsync"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/housekeeping.js"></script>
+</body>
+</html>
