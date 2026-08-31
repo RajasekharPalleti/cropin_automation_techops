@@ -763,8 +763,11 @@ async function doCloudUploadTemplate() {
 
         if (!res.ok) throw new Error(`API failed: ${res.status} ${res.statusText}`);
 
-        statusEl.innerHTML = `<strong>Upload successful!</strong> Check the console for the full response.`;
-        statusEl.style.color = '#2e7d32';
+        const formattedData = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+        statusEl.innerHTML = `
+            <div style="margin-bottom: 8px; color: #2e7d32;"><strong>Upload successful!</strong> Response:</div>
+            <pre style="background: #f8fafc; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 0.8rem; color: #334155; border: 1px solid #e2e8f0; margin: 0; max-height: 250px; overflow-y: auto;">${formattedData}</pre>
+        `;
     } catch (err) {
         console.error("Cloud Upload Error:", err);
         statusEl.textContent = '';
