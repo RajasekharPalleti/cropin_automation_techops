@@ -280,7 +280,7 @@ def _build_email_body(base_url, overall_issues, recent_issues):
                 </div>
 
                 <div class="footer">
-                    Regards,<br><br>
+                    Regards,<br>
                     <strong>Rajasekhar Palleti</strong><br>
                     QA Engineer | Cropin
                 </div>
